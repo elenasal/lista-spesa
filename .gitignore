@@ -33,3 +33,5 @@ npm-debug.log*
 
 # Reference images (non servono in produzione)
 Reference UI/
+
+.vercel
