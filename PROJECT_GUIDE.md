@@ -66,10 +66,21 @@ Dati salvati in `localStorage` con chiave `lista-spesa-items`.
 }
 ```
 
-## Evoluzione Futura
+## Roadmap
 
-- [ ] Supabase per sync cloud
-- [ ] Autenticazione utente
-- [ ] Liste multiple
-- [ ] Prodotti ricorrenti
-- [ ] Suggerimenti smart
+### Fase 2 - Database e Auth
+- [ ] Creare progetto Supabase dedicato
+- [ ] Schema: `shopping_items` con RLS
+- [ ] Auth Magic Link
+- [ ] Sync dati tra dispositivi
+
+### Fase 3 - Smart Features
+- [ ] Prodotti ricorrenti (memoria acquisti)
+- [ ] Suggerimenti "Aggiungi i soliti?"
+- [ ] Storico acquisti
+
+### Fase 4 - Avanzate
+- [ ] Liste multiple (es. "Spesa settimanale", "Party")
+- [ ] Condivisione lista con famiglia
+- [ ] Calcolo totale spesa stimato
+- [ ] Integrazione ricette → ingredienti
