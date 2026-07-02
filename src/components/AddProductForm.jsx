@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, ChevronDown, Euro, Tag, Star, ScanLine, X, Check, Heart, Trash2 } from 'lucide-react'
+import { Plus, ChevronDown, Euro, Tag, Star, ScanLine, X, Check, Heart, Trash2, Store } from 'lucide-react'
 import CategoryIcon from './ui/CategoryIcon'
 import BarcodeScanner from './BarcodeScanner'
 import { searchProducts, getBestPrice, getPricesForFavorites } from '../data/productsDatabase'
@@ -132,6 +132,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
   const [unit, setUnit] = useState('pz')
   const [price, setPrice] = useState('')
   const [category, setCategory] = useState('altro')
+  const [selectedSupermarketId, setSelectedSupermarketId] = useState(null)
   const [showCategories, setShowCategories] = useState(false)
   const [showUnits, setShowUnits] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -213,18 +214,33 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
     }
   }
 
-  const handleSelectSuggestion = (suggestion) => {
+  const handleSelectSuggestion = (suggestion, specificSupermarketId = null) => {
     setName(suggestion.name)
     setCategory(suggestion.category)
     setManualCategory(true)
     setShowSuggestions(false)
 
-    // Se il prodotto è dal database, imposta il prezzo migliore
+    // Se il prodotto è dal database, imposta il prezzo
     if (suggestion.fromDatabase && hasFavorites) {
-      const bestPrice = getBestPrice(suggestion, favorites)
-      if (bestPrice) {
-        setPrice(bestPrice.price.toFixed(2).replace('.', ','))
+      if (specificSupermarketId) {
+        // Supermercato specifico selezionato
+        const prices = getPricesForFavorites(suggestion, favorites)
+        const priceInfo = prices.find(p => p.supermarketId === specificSupermarketId)
+        if (priceInfo) {
+          const effectivePrice = priceInfo.onSale ? priceInfo.salePrice : priceInfo.effectivePrice
+          setPrice(effectivePrice.toFixed(2).replace('.', ','))
+          setSelectedSupermarketId(specificSupermarketId)
+        }
+      } else {
+        // Usa il prezzo migliore
+        const bestPrice = getBestPrice(suggestion, favorites)
+        if (bestPrice) {
+          setPrice(bestPrice.price.toFixed(2).replace('.', ','))
+          setSelectedSupermarketId(bestPrice.supermarketId)
+        }
       }
+    } else {
+      setSelectedSupermarketId(null)
     }
 
     // Focus sull'input per continuare
@@ -243,24 +259,23 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
 
     setLoading(true)
     const priceValue = price ? parseFloat(price.replace(',', '.')) : null
-    await onAdd(name, quantity, unit, category, priceValue)
+    await onAdd(name, quantity, unit, category, priceValue, selectedSupermarketId)
     setName('')
     setQuantity(1)
     setUnit('pz')
     setPrice('')
     setCategory('altro')
+    setSelectedSupermarketId(null)
     setManualCategory(false)
     setLoading(false)
   }
 
-  // Render prezzi per un prodotto del database
+  // Render prezzi per un prodotto del database (cliccabili per selezionare supermercato)
   const renderProductPrices = (product) => {
     if (!hasFavorites || !product.fromDatabase) return null
 
     const prices = getPricesForFavorites(product, favorites)
     if (prices.length === 0) return null
-
-    const bestPrice = prices[0] // Già ordinati per prezzo
 
     return (
       <div className="flex flex-wrap items-center gap-1.5 mt-1">
@@ -269,12 +284,17 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
           const isBest = idx === 0
 
           return (
-            <span
+            <button
+              type="button"
               key={priceInfo.supermarketId}
-              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs ${
+              onClick={(e) => {
+                e.stopPropagation()
+                handleSelectSuggestion(product, priceInfo.supermarketId)
+              }}
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs transition-all hover:scale-105 ${
                 isBest
-                  ? 'bg-green-100 text-green-700 font-medium'
-                  : 'bg-gray-100 text-gray-600'
+                  ? 'bg-green-100 text-green-700 font-medium hover:bg-green-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               <span
@@ -292,7 +312,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
                 <span>{formatPrice(priceInfo.effectivePrice)}</span>
               )}
               {isBest && <Star className="w-3 h-3 fill-current" />}
-            </span>
+            </button>
           )
         })}
       </div>
@@ -311,8 +331,8 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
   }
 
   return (
-    <div className="space-y-3">
-      {/* Sezione preferiti quick-add */}
+    <div className="space-y-4">
+      {/* Sezione preferiti quick-add - scroll orizzontale */}
       {hasFavoriteProducts && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -321,35 +341,36 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
               <span className="text-xs font-semibold text-slate uppercase">Preferiti</span>
               <span className="text-xs text-slate-light">({favoriteProducts.length})</span>
             </div>
-            {favoriteProducts.length > 2 && (
-              <button
-                type="button"
-                onClick={() => setShowAllFavorites(true)}
-                className="text-xs text-ocean hover:text-deep font-medium transition-colors"
-              >
-                Vedi tutti
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setShowAllFavorites(true)}
+              className="text-xs text-ocean hover:text-deep font-medium transition-colors"
+            >
+              Gestisci
+            </button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {favoriteProducts.slice(0, 2).map((fav) => (
+          {/* Riga scrollabile orizzontalmente */}
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+            {favoriteProducts.map((fav) => (
               <motion.button
                 key={fav.id}
                 type="button"
                 onClick={() => handleQuickAddFavorite(fav)}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-cloud rounded-full text-sm text-night hover:border-rose-300 hover:bg-rose-50 transition-all shadow-soft"
+                className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-white border border-cloud rounded-xl text-sm text-night hover:border-rose-300 hover:bg-rose-50 transition-all shadow-soft"
               >
-                <CategoryIcon category={fav.category} className="w-3.5 h-3.5 text-ocean" />
-                <span className="truncate max-w-[120px]">{fav.name}</span>
-                <Plus className="w-3.5 h-3.5 text-slate" />
+                <CategoryIcon category={fav.category} className="w-4 h-4 text-ocean" />
+                <span className="whitespace-nowrap">{fav.name}</span>
+                <Plus className="w-4 h-4 text-slate" />
               </motion.button>
             ))}
           </div>
         </div>
       )}
 
+      {/* Sezione aggiungi prodotto - fascia azzurrina */}
+      <div className="bg-sky-light/50 -mx-4 px-4 py-4 sm:-mx-6 sm:px-6">
       <form onSubmit={handleSubmit} className="space-y-3">
       {/* Main input row */}
       <div className="flex gap-2">
@@ -750,6 +771,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
         )}
       </AnimatePresence>
       </form>
+      </div>
     </div>
   )
 }

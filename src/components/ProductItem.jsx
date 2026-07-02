@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Trash2, Pencil, X, ChevronDown, Tag, Star, Euro, Heart, MoreVertical } from 'lucide-react'
+import { Check, Trash2, Pencil, X, ChevronDown, Tag, Star, Euro, Heart, MoreVertical, Store } from 'lucide-react'
 import CategoryIcon from './ui/CategoryIcon'
 import { searchProducts, getPricesForFavorites } from '../data/productsDatabase'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
@@ -35,7 +35,7 @@ function formatPrice(price) {
 }
 
 export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
-  const { name, quantity, unit = 'pz', category, price, checked } = item
+  const { name, quantity, unit = 'pz', category, price, checked, supermarketId } = item
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(name)
   const [editQuantity, setEditQuantity] = useState(quantity)
@@ -50,6 +50,7 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
   const dropdownRef = useRef(null)
   const unitsRef = useRef(null)
   const menuRef = useRef(null)
+  const cardRef = useRef(null)
 
   // Hook per supermercati preferiti
   const { favorites, hasFavorites } = useFavoriteSupermarkets()
@@ -66,6 +67,18 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
   const productPrices = matchedProduct && hasFavorites
     ? getPricesForFavorites(matchedProduct, favorites)
     : []
+
+  // Supermercato selezionato per questo prodotto
+  const selectedSupermarket = supermarketId ? getSupermarketById(supermarketId) : null
+  const selectedPriceInfo = supermarketId
+    ? productPrices.find(p => p.supermarketId === supermarketId)
+    : null
+
+  // Funzione per selezionare/deselezionare supermercato
+  const handleSelectSupermarket = (smId) => {
+    const newSupermarketId = smId === supermarketId ? null : smId
+    onUpdate(item.id, { supermarketId: newSupermarketId })
+  }
 
   // Focus input quando entra in edit mode
   useEffect(() => {
@@ -86,6 +99,10 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
       }
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowMenu(false)
+      }
+      // Chiudi dettaglio prezzi se clicco fuori dalla card
+      if (cardRef.current && !cardRef.current.contains(event.target)) {
+        setShowPrices(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -314,6 +331,7 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
   // Modalita' visualizzazione normale
   return (
     <motion.div
+      ref={cardRef}
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -385,9 +403,37 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
                 {unit === 'pz' || unit === 'conf' ? quantity : quantity.toFixed(1).replace('.0', '')} {unit}
               </span>
             )}
-            {price && (
+            {/* Mostra prezzo del supermercato selezionato o prezzo generico */}
+            {selectedPriceInfo ? (
+              <span className={checked ? '' : 'text-ocean font-medium'}>
+                {selectedPriceInfo.onSale
+                  ? (selectedPriceInfo.salePrice * quantity).toFixed(2).replace('.', ',')
+                  : (selectedPriceInfo.effectivePrice * quantity).toFixed(2).replace('.', ',')
+                } €
+              </span>
+            ) : price ? (
               <span className={checked ? '' : 'text-ocean font-medium'}>
                 {(price * quantity).toFixed(2).replace('.', ',')} €
+              </span>
+            ) : null}
+            {/* Icone e badge supermercato selezionato */}
+            {selectedSupermarket && !checked && (
+              <span className="inline-flex items-center gap-1">
+                {/* Icona miglior prezzo */}
+                {productPrices.length > 0 && productPrices[0]?.supermarketId === supermarketId && (
+                  <Star className="w-3.5 h-3.5 text-green-500 fill-green-500" />
+                )}
+                {/* Icona offerta */}
+                {selectedPriceInfo?.onSale && (
+                  <Tag className="w-3.5 h-3.5 text-orange-500" />
+                )}
+                {/* Badge supermercato */}
+                <span
+                  className="px-1.5 py-0.5 rounded text-[10px] font-medium text-white"
+                  style={{ backgroundColor: selectedSupermarket.color }}
+                >
+                  {selectedSupermarket.name}
+                </span>
               </span>
             )}
           </div>
@@ -467,30 +513,57 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
             className="overflow-hidden"
           >
             <div className="px-3 pb-3 pt-1 border-t border-cloud/50 overflow-hidden">
-              <p className="text-xs font-medium text-slate mb-2">Confronta prezzi</p>
+              <p className="text-xs font-medium text-slate mb-2">Scegli supermercato</p>
               <div className="space-y-1.5 overflow-hidden">
+                {/* Opzione "Nessuna preferenza" */}
+                {supermarketId && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSelectSupermarket(null)
+                    }}
+                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm bg-gray-50 hover:bg-gray-100 transition-colors"
+                  >
+                    <Store className="w-4 h-4 text-slate" />
+                    <span className="text-gray-600">Nessuna preferenza</span>
+                  </button>
+                )}
+
                 {productPrices.map((priceInfo, idx) => {
                   const supermarket = getSupermarketById(priceInfo.supermarketId)
                   const isBest = idx === 0
+                  const isSelected = priceInfo.supermarketId === supermarketId
 
                   return (
-                    <div
+                    <button
                       key={priceInfo.supermarketId}
-                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm min-w-0 overflow-hidden ${
-                        isBest
-                          ? 'bg-green-50 border border-green-200'
-                          : 'bg-gray-50'
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleSelectSupermarket(priceInfo.supermarketId)
+                      }}
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm min-w-0 overflow-hidden transition-all ${
+                        isSelected
+                          ? 'bg-ocean/10 border-2 border-ocean'
+                          : isBest
+                            ? 'bg-green-50 border border-green-200 hover:border-green-300'
+                            : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
                       }`}
                     >
-                      {/* Colore supermercato */}
-                      <span
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: supermarket?.color }}
-                      />
+                      {/* Check se selezionato o colore supermercato */}
+                      {isSelected ? (
+                        <div className="w-4 h-4 rounded-full bg-ocean flex items-center justify-center flex-shrink-0">
+                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                        </div>
+                      ) : (
+                        <span
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: supermarket?.color }}
+                        />
+                      )}
 
                       {/* Nome e indirizzo supermercato */}
-                      <div className="flex-1 min-w-0">
-                        <span className={`block ${isBest ? 'font-medium text-green-800' : 'text-gray-700'}`}>
+                      <div className="flex-1 min-w-0 text-left">
+                        <span className={`block ${isSelected ? 'font-medium text-ocean' : isBest ? 'font-medium text-green-800' : 'text-gray-700'}`}>
                           {supermarket?.name}
                         </span>
                         <span className="text-xs text-gray-500 truncate block">
@@ -505,19 +578,19 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
                             <span className="line-through text-gray-400 text-xs">
                               {formatPrice(priceInfo.price)}
                             </span>
-                            <span className="text-orange-600 font-medium">
+                            <span className={isSelected ? 'text-ocean font-medium' : 'text-orange-600 font-medium'}>
                               {formatPrice(priceInfo.salePrice)}
                             </span>
                             <Tag className="w-3.5 h-3.5 text-orange-500" />
                           </>
                         ) : (
-                          <span className={isBest ? 'font-medium text-green-700' : ''}>
+                          <span className={isSelected ? 'font-medium text-ocean' : isBest ? 'font-medium text-green-700' : ''}>
                             {formatPrice(priceInfo.effectivePrice)}
                           </span>
                         )}
-                        {isBest && <Star className="w-3.5 h-3.5 text-green-600 fill-current" />}
+                        {isBest && !isSelected && <Star className="w-3.5 h-3.5 text-green-600 fill-current" />}
                       </div>
-                    </div>
+                    </button>
                   )
                 })}
               </div>

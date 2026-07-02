@@ -132,7 +132,7 @@ export function useShoppingList(listId = null) {
   }, [])
 
   // Add new item
-  const addItem = useCallback((name, quantity = 1, unit = 'pz', category = 'altro', price = null) => {
+  const addItem = useCallback((name, quantity = 1, unit = 'pz', category = 'altro', price = null, supermarketId = null) => {
     if (!name.trim()) return null
 
     const newItem = {
@@ -142,6 +142,7 @@ export function useShoppingList(listId = null) {
       unit,
       category,
       price,
+      supermarketId,
       checked: false,
       created_at: new Date().toISOString(),
     }
