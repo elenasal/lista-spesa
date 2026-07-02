@@ -81,13 +81,29 @@ Dati salvati in `localStorage` con chiave `lista-spesa-items`.
 - [ ] Auth Magic Link
 - [ ] Sync dati tra dispositivi
 
-### Fase 3 - Smart Features
-- [ ] Prodotti ricorrenti (memoria acquisti)
-- [ ] Suggerimenti "Aggiungi i soliti?"
-- [ ] Storico acquisti
+### Fase 3 - Smart Features (Completata)
+- [x] Prodotti ricorrenti (memoria acquisti)
+- [x] Suggerimenti "Aggiungi i soliti?"
+- [x] Prodotti preferiti con quick-add
+- [ ] Storico acquisti (interfaccia completa)
 
-### Fase 4 - Avanzate
-- [ ] Liste multiple (es. "Spesa settimanale", "Party")
+### Fase 4 - Avanzate (Parziale)
+- [x] Liste multiple (es. "Spesa settimanale", "Party")
+- [x] Calcolo totale spesa stimato
+- [x] Confronto prezzi supermercati
+- [x] Liste associate a supermercato
 - [ ] Condivisione lista con famiglia
-- [ ] Calcolo totale spesa stimato
-- [ ] Integrazione ricette → ingredienti
+
+### Fase 5 - Prossime Feature
+- [ ] OCR lista cartacea (foto lista scritta → import prodotti)
+- [ ] Notifiche offerte (avviso prodotto in lista in offerta)
+- [ ] Filtri per supermercato
+
+### Implementato (Sessione corrente)
+- [x] Unità di misura (pz, kg, g, L, mL, conf)
+- [x] Modifica completa prodotto (quantità, unità, prezzo)
+- [x] Scanner barcode con fotocamera
+- [x] Prodotti preferiti + sezione quick-add
+- [x] Sezione supermercati nella home
+- [x] Liste per supermercato specifico
+- [x] Nuovo branding "Spesa a ruota libera"
