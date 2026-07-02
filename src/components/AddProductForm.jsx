@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, ChevronDown, Euro } from 'lucide-react'
+import { Plus, ChevronDown, Euro, Tag, Star } from 'lucide-react'
 import CategoryIcon from './ui/CategoryIcon'
+import { searchProducts, getBestPrice, getPricesForFavorites } from '../data/productsDatabase'
+import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
+import { getSupermarketById } from '../data/supermarkets'
 
 const CATEGORIES = [
   { id: 'frutta-verdura', name: 'Frutta e Verdura' },
@@ -107,6 +110,11 @@ function detectCategory(productName) {
   return null // Nessuna categoria rilevata
 }
 
+// Formatta prezzo in italiano
+function formatPrice(price) {
+  return price.toFixed(2).replace('.', ',') + '€'
+}
+
 export default function AddProductForm({ onAdd, getSuggestions }) {
   const [name, setName] = useState('')
   const [quantity, setQuantity] = useState(1)
@@ -120,10 +128,30 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
   const suggestionsRef = useRef(null)
   const inputRef = useRef(null)
 
+  // Hook per supermercati preferiti
+  const { favorites, hasFavorites } = useFavoriteSupermarkets()
+
   const selectedCategory = CATEGORIES.find(c => c.id === category)
 
-  // Ottieni suggerimenti filtrati
-  const suggestions = getSuggestions ? getSuggestions(name) : []
+  // Cerca prodotti nel database
+  const databaseProducts = searchProducts(name)
+
+  // Ottieni anche suggerimenti basati sullo storico (se disponibile)
+  const historySuggestions = getSuggestions ? getSuggestions(name) : []
+
+  // Combina: prima i prodotti dal database, poi lo storico (evitando duplicati)
+  const allSuggestions = [
+    ...databaseProducts.map(p => ({
+      ...p,
+      fromDatabase: true,
+    })),
+    ...historySuggestions
+      .filter(h => !databaseProducts.some(p => p.name.toLowerCase() === h.name.toLowerCase()))
+      .map(h => ({
+        ...h,
+        fromDatabase: false,
+      })),
+  ].slice(0, 8) // Max 8 suggerimenti totali
 
   // Auto-detect categoria quando cambia il nome (solo se non selezionata manualmente)
   useEffect(() => {
@@ -167,6 +195,15 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
     setCategory(suggestion.category)
     setManualCategory(true)
     setShowSuggestions(false)
+
+    // Se il prodotto è dal database, imposta il prezzo migliore
+    if (suggestion.fromDatabase && hasFavorites) {
+      const bestPrice = getBestPrice(suggestion, favorites)
+      if (bestPrice) {
+        setPrice(bestPrice.price.toFixed(2).replace('.', ','))
+      }
+    }
+
     // Focus sull'input per continuare
     inputRef.current?.focus()
   }
@@ -192,6 +229,52 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
     setLoading(false)
   }
 
+  // Render prezzi per un prodotto del database
+  const renderProductPrices = (product) => {
+    if (!hasFavorites || !product.fromDatabase) return null
+
+    const prices = getPricesForFavorites(product, favorites)
+    if (prices.length === 0) return null
+
+    const bestPrice = prices[0] // Già ordinati per prezzo
+
+    return (
+      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+        {prices.slice(0, 3).map((priceInfo, idx) => {
+          const supermarket = getSupermarketById(priceInfo.supermarketId)
+          const isBest = idx === 0
+
+          return (
+            <span
+              key={priceInfo.supermarketId}
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs ${
+                isBest
+                  ? 'bg-green-100 text-green-700 font-medium'
+                  : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: supermarket?.color }}
+              />
+              <span className="truncate max-w-[60px]">{supermarket?.name}</span>
+              {priceInfo.onSale ? (
+                <>
+                  <span className="line-through text-gray-400">{formatPrice(priceInfo.price)}</span>
+                  <span className="text-orange-600 font-medium">{formatPrice(priceInfo.salePrice)}</span>
+                  <Tag className="w-3 h-3 text-orange-500" />
+                </>
+              ) : (
+                <span>{formatPrice(priceInfo.effectivePrice)}</span>
+              )}
+              {isBest && <Star className="w-3 h-3 fill-current" />}
+            </span>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       {/* Main input row */}
@@ -212,28 +295,60 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
 
           {/* Suggerimenti autocomplete */}
           <AnimatePresence>
-            {showSuggestions && suggestions.length > 0 && (
+            {showSuggestions && allSuggestions.length > 0 && (
               <motion.div
                 ref={suggestionsRef}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-soft-lg border border-cloud z-20 py-1 max-h-60 overflow-y-auto"
+                className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-soft-lg border border-cloud z-20 py-1 max-h-80 overflow-y-auto"
               >
-                <p className="px-3 py-1.5 text-xs font-semibold text-slate uppercase">
-                  Compri spesso
-                </p>
-                {suggestions.map((suggestion, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => handleSelectSuggestion(suggestion)}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-night hover:bg-sky-light/30 transition-colors"
-                  >
-                    <CategoryIcon category={suggestion.category} className="w-4 h-4 text-ocean" />
-                    <span className="flex-1 text-left">{suggestion.name}</span>
-                  </button>
-                ))}
+                {/* Sezione prodotti dal database */}
+                {databaseProducts.length > 0 && (
+                  <>
+                    <p className="px-3 py-1.5 text-xs font-semibold text-slate uppercase">
+                      Prodotti {hasFavorites && '· Confronta prezzi'}
+                    </p>
+                    {allSuggestions
+                      .filter(s => s.fromDatabase)
+                      .map((suggestion, index) => (
+                        <button
+                          key={`db-${index}`}
+                          type="button"
+                          onClick={() => handleSelectSuggestion(suggestion)}
+                          className="w-full flex flex-col items-start px-3 py-2 text-sm text-night hover:bg-sky-light/30 transition-colors border-b border-cloud/50 last:border-0"
+                        >
+                          <div className="flex items-center gap-2 w-full">
+                            <CategoryIcon category={suggestion.category} className="w-4 h-4 text-ocean flex-shrink-0" />
+                            <span className="flex-1 text-left font-medium">{suggestion.name}</span>
+                          </div>
+                          {renderProductPrices(suggestion)}
+                        </button>
+                      ))}
+                  </>
+                )}
+
+                {/* Sezione storico */}
+                {historySuggestions.length > 0 && allSuggestions.some(s => !s.fromDatabase) && (
+                  <>
+                    <p className="px-3 py-1.5 text-xs font-semibold text-slate uppercase mt-1">
+                      Compri spesso
+                    </p>
+                    {allSuggestions
+                      .filter(s => !s.fromDatabase)
+                      .map((suggestion, index) => (
+                        <button
+                          key={`hist-${index}`}
+                          type="button"
+                          onClick={() => handleSelectSuggestion(suggestion)}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-sm text-night hover:bg-sky-light/30 transition-colors"
+                        >
+                          <CategoryIcon category={suggestion.category} className="w-4 h-4 text-ocean" />
+                          <span className="flex-1 text-left">{suggestion.name}</span>
+                        </button>
+                      ))}
+                  </>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Trash2, Pencil, X, ChevronDown } from 'lucide-react'
+import { Check, Trash2, Pencil, X, ChevronDown, Tag, Star } from 'lucide-react'
 import CategoryIcon from './ui/CategoryIcon'
+import { searchProducts, getPricesForFavorites } from '../data/productsDatabase'
+import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
+import { getSupermarketById } from '../data/supermarkets'
 
 const CATEGORIES = [
   { id: 'frutta-verdura', name: 'Frutta e Verdura' },
@@ -16,14 +19,32 @@ const CATEGORIES = [
   { id: 'altro', name: 'Altro' },
 ]
 
+// Formatta prezzo in italiano
+function formatPrice(price) {
+  return price.toFixed(2).replace('.', ',') + '€'
+}
+
 export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
   const { name, quantity, category, price, checked } = item
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(name)
   const [editCategory, setEditCategory] = useState(category)
   const [showCategories, setShowCategories] = useState(false)
+  const [showPrices, setShowPrices] = useState(false)
   const inputRef = useRef(null)
   const dropdownRef = useRef(null)
+
+  // Hook per supermercati preferiti
+  const { favorites, hasFavorites } = useFavoriteSupermarkets()
+
+  // Cerca il prodotto nel database per mostrare i prezzi
+  const databaseProducts = searchProducts(name)
+  const matchedProduct = databaseProducts.find(p =>
+    p.name.toLowerCase() === name.toLowerCase()
+  )
+  const productPrices = matchedProduct && hasFavorites
+    ? getPricesForFavorites(matchedProduct, favorites)
+    : []
 
   // Focus input quando entra in edit mode
   useEffect(() => {
@@ -73,6 +94,14 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
       handleSave()
     } else if (e.key === 'Escape') {
       handleCancel()
+    }
+  }
+
+  const handleTogglePrices = (e) => {
+    // Non aprire se stiamo cliccando su altri bottoni
+    if (e.target.closest('button')) return
+    if (productPrices.length > 0 && !checked) {
+      setShowPrices(!showPrices)
     }
   }
 
@@ -165,71 +194,168 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -100 }}
-      className={`group flex items-center gap-3 p-3 bg-white rounded-xl shadow-soft transition-all ${
-        checked ? 'opacity-60' : 'card-hover'
+      className={`bg-white rounded-xl shadow-soft transition-all ${
+        checked ? 'opacity-60' : ''
       }`}
     >
-      {/* Checkbox */}
-      <button
-        onClick={onToggle}
-        className={`flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-          checked
-            ? 'bg-sky border-sky'
-            : 'border-slate-light hover:border-sky'
-        }`}
+      {/* Riga principale */}
+      <div
+        onClick={handleTogglePrices}
+        className={`group flex items-center gap-3 p-3 ${
+          productPrices.length > 0 && !checked ? 'cursor-pointer' : ''
+        } ${!checked ? 'card-hover' : ''}`}
       >
-        {checked && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        {/* Checkbox */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggle()
+          }}
+          className={`flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+            checked
+              ? 'bg-sky border-sky'
+              : 'border-slate-light hover:border-sky'
+          }`}
+        >
+          {checked && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            >
+              <Check className="w-4 h-4 text-white" strokeWidth={3} />
+            </motion.div>
+          )}
+        </button>
+
+        {/* Category icon */}
+        <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
+          checked ? 'bg-cloud' : 'bg-sky-light/50'
+        }`}>
+          <CategoryIcon category={category} className={checked ? 'text-slate' : 'text-ocean'} />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className={`font-medium truncate transition-all ${
+              checked ? 'text-slate line-through' : 'text-night'
+            }`}>
+              {name}
+            </p>
+            {/* Indicatore prezzi disponibili */}
+            {productPrices.length > 0 && !checked && (
+              <ChevronDown
+                className={`w-4 h-4 text-slate transition-transform flex-shrink-0 ${
+                  showPrices ? 'rotate-180' : ''
+                }`}
+              />
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate">
+            {quantity > 1 && <span>Qtà: {quantity}</span>}
+            {price && (
+              <span className={checked ? '' : 'text-ocean font-medium'}>
+                {(price * quantity).toFixed(2).replace('.', ',')} €
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Edit button */}
+        {!checked && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              handleStartEdit()
+            }}
+            className="flex-shrink-0 p-2 text-slate-light opacity-0 group-hover:opacity-100 hover:text-ocean hover:bg-sky-light/30 rounded-lg transition-all"
           >
-            <Check className="w-4 h-4 text-white" strokeWidth={3} />
+            <Pencil className="w-4 h-4" />
+          </button>
+        )}
+
+        {/* Delete button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
+          className="flex-shrink-0 p-2 text-slate-light opacity-0 group-hover:opacity-100 hover:text-error hover:bg-error-light rounded-lg transition-all"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Sezione prezzi espandibile */}
+      <AnimatePresence>
+        {showPrices && productPrices.length > 0 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 pt-1 border-t border-cloud/50">
+              <p className="text-xs font-medium text-slate mb-2">Confronta prezzi</p>
+              <div className="space-y-1.5">
+                {productPrices.map((priceInfo, idx) => {
+                  const supermarket = getSupermarketById(priceInfo.supermarketId)
+                  const isBest = idx === 0
+
+                  return (
+                    <div
+                      key={priceInfo.supermarketId}
+                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm ${
+                        isBest
+                          ? 'bg-green-50 border border-green-200'
+                          : 'bg-gray-50'
+                      }`}
+                    >
+                      {/* Colore supermercato */}
+                      <span
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: supermarket?.color }}
+                      />
+
+                      {/* Nome e indirizzo supermercato */}
+                      <div className="flex-1 min-w-0">
+                        <span className={`block ${isBest ? 'font-medium text-green-800' : 'text-gray-700'}`}>
+                          {supermarket?.name}
+                        </span>
+                        <span className="text-xs text-gray-500 truncate block">
+                          {supermarket?.address}
+                        </span>
+                      </div>
+
+                      {/* Prezzo */}
+                      <div className="flex items-center gap-1">
+                        {priceInfo.onSale ? (
+                          <>
+                            <span className="line-through text-gray-400 text-xs">
+                              {formatPrice(priceInfo.price)}
+                            </span>
+                            <span className="text-orange-600 font-medium">
+                              {formatPrice(priceInfo.salePrice)}
+                            </span>
+                            <Tag className="w-3.5 h-3.5 text-orange-500" />
+                          </>
+                        ) : (
+                          <span className={isBest ? 'font-medium text-green-700' : ''}>
+                            {formatPrice(priceInfo.effectivePrice)}
+                          </span>
+                        )}
+                        {isBest && <Star className="w-3.5 h-3.5 text-green-600 fill-current" />}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </motion.div>
         )}
-      </button>
-
-      {/* Category icon */}
-      <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
-        checked ? 'bg-cloud' : 'bg-sky-light/50'
-      }`}>
-        <CategoryIcon category={category} className={checked ? 'text-slate' : 'text-ocean'} />
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <p className={`font-medium truncate transition-all ${
-          checked ? 'text-slate line-through' : 'text-night'
-        }`}>
-          {name}
-        </p>
-        <div className="flex items-center gap-2 text-xs text-slate">
-          {quantity > 1 && <span>Qtà: {quantity}</span>}
-          {price && (
-            <span className={checked ? '' : 'text-ocean font-medium'}>
-              {(price * quantity).toFixed(2).replace('.', ',')} €
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Edit button */}
-      {!checked && (
-        <button
-          onClick={handleStartEdit}
-          className="flex-shrink-0 p-2 text-slate-light opacity-0 group-hover:opacity-100 hover:text-ocean hover:bg-sky-light/30 rounded-lg transition-all"
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
-      )}
-
-      {/* Delete button */}
-      <button
-        onClick={onDelete}
-        className="flex-shrink-0 p-2 text-slate-light opacity-0 group-hover:opacity-100 hover:text-error hover:bg-error-light rounded-lg transition-all"
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
+      </AnimatePresence>
     </motion.div>
   )
 }

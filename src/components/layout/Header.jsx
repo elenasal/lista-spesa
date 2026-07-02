@@ -1,7 +1,7 @@
-import { ShoppingCart, ArrowLeft } from 'lucide-react'
+import { ShoppingCart, ArrowLeft, Store } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-export default function Header({ currentList, onBack }) {
+export default function Header({ title, subtitle, onBack, onOpenSupermarkets }) {
   return (
     <motion.header
       initial={{ opacity: 0, y: -10 }}
@@ -26,12 +26,24 @@ export default function Header({ currentList, onBack }) {
         {/* Titolo */}
         <div className="flex-1">
           <h1 className="font-semibold text-night">
-            {currentList ? currentList.name : 'Lista della Spesa'}
+            {title || 'Lista della Spesa'}
           </h1>
           <p className="text-xs text-slate">
-            {currentList ? 'I tuoi acquisti' : 'Le tue liste'}
+            {subtitle || 'Le tue liste'}
           </p>
         </div>
+
+        {/* Icona supermercati (solo in home) */}
+        {onOpenSupermarkets && (
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={onOpenSupermarkets}
+            className="w-10 h-10 flex items-center justify-center text-slate hover:text-ocean hover:bg-sky-light/30 rounded-xl transition-all"
+            title="I miei supermercati"
+          >
+            <Store className="w-5 h-5" />
+          </motion.button>
+        )}
       </div>
     </motion.header>
   )
