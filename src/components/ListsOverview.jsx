@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Plus, Trash2, Share2, ChevronRight, Store, Settings, X } from 'lucide-react'
+import { ShoppingCart, Plus, Trash2, ChevronRight, Store, Settings, X } from 'lucide-react'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { getSupermarketById } from '../data/supermarkets'
+import ShareButton from './ShareButton'
 
 // Carica items di una lista per mostrare stats
 function getListStats(listId) {
@@ -19,10 +20,11 @@ function getListStats(listId) {
     return {
       total: items.length,
       unchecked: unchecked.length,
-      totalPrice
+      totalPrice,
+      items // Restituisce anche gli items per ShareButton
     }
   } catch {
-    return { total: 0, unchecked: 0, totalPrice: 0 }
+    return { total: 0, unchecked: 0, totalPrice: 0, items: [] }
   }
 }
 
@@ -35,7 +37,6 @@ export default function ListsOverview({
 }) {
   const [isCreating, setIsCreating] = useState(false)
   const [newListName, setNewListName] = useState('')
-  const [copiedListId, setCopiedListId] = useState(null)
 
   // Supermercati preferiti
   const { favorites: favoriteSupermarkets, toggleFavorite } = useFavoriteSupermarkets()
@@ -44,42 +45,6 @@ export default function ListsOverview({
   const handleCreateListForSupermarket = (supermarket) => {
     const listName = `Lista ${supermarket.name}`
     onCreateList(listName, supermarket.id)
-  }
-
-  const handleShare = async (e, list) => {
-    e.stopPropagation()
-
-    // Carica items della lista
-    const key = list.id ? `lista-spesa-items-${list.id}` : 'lista-spesa-items'
-    const saved = localStorage.getItem(key)
-    const items = saved ? JSON.parse(saved) : []
-
-    // Genera testo della lista
-    const text = items
-      .filter(i => !i.checked)
-      .map(item => {
-        const unit = item.unit || 'pz'
-        let line = `- ${item.name}`
-        if (item.quantity > 1 || unit !== 'pz') {
-          const qtyDisplay = unit === 'pz' || unit === 'conf'
-            ? item.quantity
-            : item.quantity.toFixed(1).replace('.0', '')
-          line += ` (${qtyDisplay} ${unit})`
-        }
-        if (item.price) line += ` - ${(item.price * item.quantity).toFixed(2)}€`
-        return line
-      })
-      .join('\n')
-
-    const fullText = `${list.name}\n\n${text || '(lista vuota)'}`
-
-    try {
-      await navigator.clipboard.writeText(fullText)
-      setCopiedListId(list.id)
-      setTimeout(() => setCopiedListId(null), 2000)
-    } catch (err) {
-      console.error('Errore copia:', err)
-    }
   }
 
   const handleCreate = () => {
@@ -172,17 +137,9 @@ export default function ListsOverview({
 
                   {/* Azioni */}
                   <div className="flex items-center gap-1">
-                    <button
-                      onClick={(e) => handleShare(e, list)}
-                      className={`p-2 rounded-lg transition-all ${
-                        copiedListId === list.id
-                          ? 'text-green-500 bg-green-50'
-                          : 'text-slate hover:text-ocean hover:bg-sky-light/30'
-                      }`}
-                      title={copiedListId === list.id ? 'Copiato!' : 'Condividi'}
-                    >
-                      <Share2 className="w-4 h-4" />
-                    </button>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <ShareButton items={stats.items} listName={list.name} />
+                    </div>
                     {lists.length > 1 && (
                       <button
                         onClick={(e) => {
@@ -206,9 +163,9 @@ export default function ListsOverview({
         {/* Nuova lista */}
         <motion.div layout>
           {isCreating ? (
-            <div className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-soft border-2 border-sky">
-              <div className="w-12 h-12 bg-sky-light rounded-xl flex items-center justify-center">
-                <Plus className="w-6 h-6 text-ocean" />
+            <div className="flex items-center gap-2 p-3 bg-white rounded-xl shadow-soft border-2 border-sky overflow-hidden">
+              <div className="w-10 h-10 bg-sky-light rounded-xl flex items-center justify-center flex-shrink-0">
+                <Plus className="w-5 h-5 text-ocean" />
               </div>
               <input
                 autoFocus
@@ -222,12 +179,12 @@ export default function ListsOverview({
                   }
                 }}
                 placeholder="Nome della lista..."
-                className="flex-1 px-3 py-2 bg-snow border border-cloud rounded-lg text-night focus:outline-none focus:border-sky"
+                className="flex-1 min-w-0 px-3 py-2 bg-snow border border-cloud rounded-lg text-night focus:outline-none focus:border-sky"
               />
               <button
                 onClick={handleCreate}
                 disabled={!newListName.trim()}
-                className="px-4 py-2 bg-ocean text-white rounded-lg hover:bg-deep disabled:opacity-50 transition-all"
+                className="flex-shrink-0 px-3 py-2 bg-ocean text-white rounded-lg hover:bg-deep disabled:opacity-50 transition-all text-sm font-medium"
               >
                 Crea
               </button>

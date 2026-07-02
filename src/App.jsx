@@ -65,7 +65,7 @@ function App() {
       case VIEWS.LIST:
         return {
           title: selectedList?.name || 'Lista',
-          subtitle: 'I tuoi acquisti',
+          subtitle: null,
           showBack: true,
         }
       case VIEWS.SUPERMARKETS:
@@ -76,7 +76,7 @@ function App() {
         }
       default:
         return {
-          title: 'Spesa a ruota libera',
+          title: 'Dai sfogo alle tue liste',
           subtitle: 'Tutte le tue liste, nei supermercati che ami.',
           showBack: false,
         }

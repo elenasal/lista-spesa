@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useShoppingList } from '../hooks/useShoppingList'
 import ProductItem from './ProductItem'
 import AddProductForm from './AddProductForm'
@@ -49,6 +50,13 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa' })
   } = useShoppingList(listId)
 
   const [showChecked, setShowChecked] = useState(true)
+  const [portalContainer, setPortalContainer] = useState(null)
+
+  // Trova il container per il portal nell'header
+  useEffect(() => {
+    const container = document.getElementById('header-action-portal')
+    setPortalContainer(container)
+  }, [])
 
   if (loading) {
     return (
@@ -100,7 +108,6 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa' })
           </div>
 
           <div className="flex items-center gap-2">
-            <ShareButton items={items} listName={listName} />
             {stats.checked > 0 && (
               <button
                 onClick={clearChecked}
@@ -178,6 +185,12 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa' })
             )}
           </AnimatePresence>
         </div>
+      )}
+
+      {/* ShareButton nell'header via portal */}
+      {portalContainer && createPortal(
+        <ShareButton items={items} listName={listName} />,
+        portalContainer
       )}
     </div>
   )

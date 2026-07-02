@@ -452,7 +452,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
       </div>
 
       {/* Options row */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {/* Category selector */}
         <div className="relative flex-1" ref={dropdownRef}>
           <button
@@ -471,7 +471,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-soft-lg border border-cloud z-10 py-1 max-h-60 overflow-y-auto"
+                className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-cloud z-[100] py-1 max-h-60 overflow-y-auto"
               >
                 {CATEGORIES.map((cat) => (
                   <button
@@ -492,7 +492,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
         </div>
 
         {/* Quantity selector with unit */}
-        <div className="flex items-center gap-1 bg-white border border-cloud rounded-lg px-2">
+        <div className="flex items-center gap-1 bg-white border border-cloud rounded-lg px-2 flex-shrink-0">
           <button
             type="button"
             onClick={() => setQuantity(Math.max(0.1, quantity - (unit === 'pz' || unit === 'conf' ? 1 : 0.1)))}
@@ -519,7 +519,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
         </div>
 
         {/* Unit selector */}
-        <div className="relative" ref={unitsRef}>
+        <div className="relative flex-shrink-0" ref={unitsRef}>
           <button
             type="button"
             onClick={() => setShowUnits(!showUnits)}
@@ -535,7 +535,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-soft-lg border border-cloud z-10 py-1"
+                className="absolute top-full right-0 mt-1 bg-white rounded-xl shadow-xl border border-cloud z-[100] py-1 min-w-[140px]"
               >
                 {UNITS.map((u) => (
                   <button
@@ -563,14 +563,14 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
         </div>
 
         {/* Price input */}
-        <div className="flex items-center gap-1 bg-white border border-cloud rounded-lg px-2">
-          <Euro className="w-4 h-4 text-slate" />
+        <div className="flex items-center gap-1 bg-white border border-cloud rounded-lg px-2 flex-shrink-0">
+          <Euro className="w-4 h-4 text-slate flex-shrink-0" />
           <input
             type="text"
             value={price}
             onChange={(e) => setPrice(e.target.value.replace(/[^0-9,\.]/g, ''))}
             placeholder="0,00"
-            className="w-16 py-2 text-sm text-center text-night bg-transparent focus:outline-none"
+            className="w-14 py-2 text-sm text-center text-night bg-transparent focus:outline-none"
           />
         </div>
       </div>
@@ -668,7 +668,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 overflow-hidden"
             onClick={() => setShowAllFavorites(false)}
           >
             <motion.div
@@ -676,7 +676,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[80vh] flex flex-col"
+              className="w-full max-w-[100vw] sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[80vh] flex flex-col overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
@@ -695,7 +695,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
               </div>
 
               {/* Lista preferiti */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              <div className="flex-1 w-full overflow-y-auto overflow-x-hidden p-4 space-y-2">
                 {favoriteProducts.map((fav) => (
                   <motion.div
                     key={fav.id}
@@ -703,14 +703,14 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -100 }}
-                    className="flex items-center gap-3 p-3 bg-snow rounded-xl"
+                    className="flex items-center gap-3 p-3 bg-snow rounded-xl min-w-0 overflow-hidden"
                   >
                     <div className="w-10 h-10 rounded-lg bg-sky-light/50 flex items-center justify-center flex-shrink-0">
                       <CategoryIcon category={fav.category} className="w-5 h-5 text-ocean" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-night truncate">{fav.name}</p>
-                      <p className="text-xs text-slate">
+                      <p className="text-xs text-slate truncate">
                         {fav.defaultQuantity} {fav.unit}
                         {fav.price && ` · ${fav.price.toFixed(2).replace('.', ',')}€`}
                       </p>
@@ -720,14 +720,14 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
                         handleQuickAddFavorite(fav)
                         setShowAllFavorites(false)
                       }}
-                      className="p-2 text-ocean hover:bg-sky-light/50 rounded-lg transition-colors"
+                      className="flex-shrink-0 p-2 text-ocean hover:bg-sky-light/50 rounded-lg transition-colors"
                       title="Aggiungi alla lista"
                     >
                       <Plus className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => removeFavorite(fav.id)}
-                      className="p-2 text-slate hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                      className="flex-shrink-0 p-2 text-slate hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
                       title="Rimuovi dai preferiti"
                     >
                       <Trash2 className="w-4 h-4" />

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Trash2, Pencil, X, ChevronDown, Tag, Star, Euro, Heart } from 'lucide-react'
+import { Check, Trash2, Pencil, X, ChevronDown, Tag, Star, Euro, Heart, MoreVertical } from 'lucide-react'
 import CategoryIcon from './ui/CategoryIcon'
 import { searchProducts, getPricesForFavorites } from '../data/productsDatabase'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
@@ -45,9 +45,11 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
   const [showCategories, setShowCategories] = useState(false)
   const [showUnits, setShowUnits] = useState(false)
   const [showPrices, setShowPrices] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
   const inputRef = useRef(null)
   const dropdownRef = useRef(null)
   const unitsRef = useRef(null)
+  const menuRef = useRef(null)
 
   // Hook per supermercati preferiti
   const { favorites, hasFavorites } = useFavoriteSupermarkets()
@@ -81,6 +83,9 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
       }
       if (unitsRef.current && !unitsRef.current.contains(event.target)) {
         setShowUnits(false)
+      }
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -146,7 +151,7 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
     return (
       <motion.div
         layout
-        className="flex flex-col gap-2 p-3 bg-white rounded-xl shadow-soft border-2 border-sky"
+        className="flex flex-col gap-2 p-3 bg-white rounded-xl shadow-soft border-2 border-sky relative z-40"
       >
         {/* Input nome */}
         <input
@@ -205,7 +210,7 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute bottom-full left-0 mb-1 bg-white rounded-xl shadow-soft-lg border border-cloud z-20 py-1 min-w-[100px]"
+                  className="absolute bottom-full left-0 mb-1 bg-white rounded-xl shadow-xl border border-cloud z-[100] py-1 min-w-[120px]"
                 >
                   {UNITS.map((u) => (
                     <button
@@ -264,7 +269,7 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute bottom-full left-0 right-0 mb-1 bg-white rounded-xl shadow-soft-lg border border-cloud z-20 py-1 max-h-48 overflow-y-auto"
+                  className="absolute bottom-full left-0 right-0 mb-1 bg-white rounded-xl shadow-xl border border-cloud z-[100] py-1 max-h-48 overflow-y-auto"
                 >
                   {CATEGORIES.map((cat) => (
                     <button
@@ -313,14 +318,24 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -100 }}
-      className={`bg-white rounded-xl shadow-soft transition-all ${
+      className={`bg-white rounded-xl shadow-soft transition-all relative ${
         checked ? 'opacity-60' : ''
       }`}
     >
+      {/* Gradient rosato per preferiti */}
+      {isProductFavorite && !checked && (
+        <>
+          <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-rose-200/60 via-rose-100/30 to-transparent rounded-tr-xl pointer-events-none" />
+          <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white rounded-full shadow-sm flex items-center justify-center z-10">
+            <Heart className="w-3 h-3 text-rose-500 fill-rose-500" />
+          </div>
+        </>
+      )}
+
       {/* Riga principale */}
       <div
         onClick={handleTogglePrices}
-        className={`group flex items-center gap-3 p-3 ${
+        className={`group flex items-center gap-2 p-3 ${
           productPrices.length > 0 && !checked ? 'cursor-pointer' : ''
         } ${!checked ? 'card-hover' : ''}`}
       >
@@ -347,16 +362,9 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
           )}
         </button>
 
-        {/* Category icon */}
-        <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
-          checked ? 'bg-cloud' : 'bg-sky-light/50'
-        }`}>
-          <CategoryIcon category={category} className={checked ? 'text-slate' : 'text-ocean'} />
-        </div>
-
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <p className={`font-medium truncate transition-all ${
               checked ? 'text-slate line-through' : 'text-night'
             }`}>
@@ -385,47 +393,67 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
           </div>
         </div>
 
-        {/* Favorite button */}
-        {!checked && (
+        {/* Menu azioni */}
+        <div className="relative flex-shrink-0" ref={menuRef}>
           <button
             onClick={(e) => {
               e.stopPropagation()
-              toggleFavorite({ name, category, unit, quantity, price })
+              setShowMenu(!showMenu)
             }}
-            className={`flex-shrink-0 p-2 rounded-lg transition-all ${
-              isProductFavorite
-                ? 'text-rose-500 hover:text-rose-600 hover:bg-rose-50'
-                : 'text-slate-light opacity-0 group-hover:opacity-100 hover:text-rose-500 hover:bg-rose-50'
-            }`}
-            title={isProductFavorite ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'}
+            className="p-1.5 text-slate hover:text-night hover:bg-cloud rounded-lg transition-all"
           >
-            <Heart className={`w-4 h-4 ${isProductFavorite ? 'fill-current' : ''}`} />
+            <MoreVertical className="w-5 h-5" />
           </button>
-        )}
 
-        {/* Edit button */}
-        {!checked && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              handleStartEdit()
-            }}
-            className="flex-shrink-0 p-2 text-slate-light opacity-0 group-hover:opacity-100 hover:text-ocean hover:bg-sky-light/30 rounded-lg transition-all"
-          >
-            <Pencil className="w-4 h-4" />
-          </button>
-        )}
-
-        {/* Delete button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onDelete()
-          }}
-          className="flex-shrink-0 p-2 text-slate-light opacity-0 group-hover:opacity-100 hover:text-error hover:bg-error-light rounded-lg transition-all"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+          <AnimatePresence>
+            {showMenu && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="absolute right-0 bottom-full mb-1 bg-white rounded-xl shadow-xl border border-cloud z-[100] py-1 min-w-[140px]"
+              >
+                {!checked && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleFavorite({ name, category, unit, quantity, price })
+                      setShowMenu(false)
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-night hover:bg-sky-light/30 transition-colors"
+                  >
+                    <Heart className={`w-4 h-4 ${isProductFavorite ? 'fill-rose-500 text-rose-500' : 'text-slate'}`} />
+                    <span>{isProductFavorite ? 'Rimuovi' : 'Preferito'}</span>
+                  </button>
+                )}
+                {!checked && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleStartEdit()
+                      setShowMenu(false)
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-night hover:bg-sky-light/30 transition-colors"
+                  >
+                    <Pencil className="w-4 h-4 text-slate" />
+                    <span>Modifica</span>
+                  </button>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDelete()
+                    setShowMenu(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-error hover:bg-error-light transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Elimina</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Sezione prezzi espandibile */}
@@ -438,9 +466,9 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-3 pt-1 border-t border-cloud/50">
+            <div className="px-3 pb-3 pt-1 border-t border-cloud/50 overflow-hidden">
               <p className="text-xs font-medium text-slate mb-2">Confronta prezzi</p>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 overflow-hidden">
                 {productPrices.map((priceInfo, idx) => {
                   const supermarket = getSupermarketById(priceInfo.supermarketId)
                   const isBest = idx === 0
@@ -448,7 +476,7 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
                   return (
                     <div
                       key={priceInfo.supermarketId}
-                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm ${
+                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm min-w-0 overflow-hidden ${
                         isBest
                           ? 'bg-green-50 border border-green-200'
                           : 'bg-gray-50'
@@ -471,7 +499,7 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
                       </div>
 
                       {/* Prezzo */}
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-shrink-0">
                         {priceInfo.onSale ? (
                           <>
                             <span className="line-through text-gray-400 text-xs">

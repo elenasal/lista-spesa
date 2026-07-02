@@ -1,7 +1,7 @@
 import { ShoppingCart, ArrowLeft, Store, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-export default function Header({ title, subtitle, onBack, onOpenSupermarkets }) {
+export default function Header({ title, subtitle, onBack, onOpenSupermarkets, rightAction }) {
   return (
     <motion.header
       initial={{ opacity: 0, y: -10 }}
@@ -46,6 +46,12 @@ export default function Header({ title, subtitle, onBack, onOpenSupermarkets }) 
             <Store className="w-5 h-5" />
           </motion.button>
         )}
+
+        {/* Azione personalizzata a destra */}
+        {rightAction}
+
+        {/* Portal target per azioni da altri componenti */}
+        <div id="header-action-portal" />
       </div>
     </motion.header>
   )
