@@ -68,6 +68,13 @@ Dati salvati in `localStorage` con chiave `lista-spesa-items`.
 
 ## Roadmap
 
+### Fase 1.5 - PWA (Completata)
+- [x] Installazione `vite-plugin-pwa`
+- [x] Manifest con icone e colori
+- [x] Service Worker per offline
+- [x] Meta tag Apple per iOS
+- [x] Cache Google Fonts
+
 ### Fase 2 - Database e Auth
 - [ ] Creare progetto Supabase dedicato
 - [ ] Schema: `shopping_items` con RLS

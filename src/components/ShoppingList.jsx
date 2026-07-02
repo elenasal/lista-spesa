@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useShoppingList } from '../hooks/useShoppingList'
 import ProductItem from './ProductItem'
 import AddProductForm from './AddProductForm'
+import ShareButton from './ShareButton'
 import EmptyState from './ui/EmptyState'
 import LoadingSpinner from './ui/LoadingSpinner'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -34,17 +35,18 @@ const CATEGORY_NAMES = {
   'altro': 'Altro',
 }
 
-export default function ShoppingList() {
+export default function ShoppingList({ listId, listName = 'Lista della Spesa' }) {
   const {
     items,
-    itemsByCategory,
     loading,
     addItem,
     toggleItem,
+    updateItem,
     deleteItem,
     clearChecked,
+    getSuggestedProducts,
     stats,
-  } = useShoppingList()
+  } = useShoppingList(listId)
 
   const [showChecked, setShowChecked] = useState(true)
 
@@ -74,7 +76,7 @@ export default function ShoppingList() {
   return (
     <div className="py-6">
       {/* Add form */}
-      <AddProductForm onAdd={addItem} />
+      <AddProductForm onAdd={addItem} getSuggestions={getSuggestedProducts} />
 
       {/* Stats bar */}
       {items.length > 0 && (
@@ -83,22 +85,32 @@ export default function ShoppingList() {
           animate={{ opacity: 1 }}
           className="flex items-center justify-between mt-6 mb-4"
         >
-          <p className="text-sm text-slate">
-            <span className="font-medium text-night">{stats.unchecked}</span> da comprare
-            {stats.checked > 0 && (
-              <span className="text-slate-light"> · {stats.checked} completati</span>
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-slate">
+              <span className="font-medium text-night">{stats.unchecked}</span> da comprare
+              {stats.checked > 0 && (
+                <span className="text-slate-light"> · {stats.checked} completati</span>
+              )}
+            </p>
+            {stats.totalPrice > 0 && (
+              <span className="text-sm font-semibold text-ocean bg-sky-light/50 px-2 py-0.5 rounded-full">
+                ~{stats.totalPrice.toFixed(2).replace('.', ',')} €
+              </span>
             )}
-          </p>
+          </div>
 
-          {stats.checked > 0 && (
-            <button
-              onClick={clearChecked}
-              className="text-sm text-slate hover:text-error flex items-center gap-1 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              Svuota
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            <ShareButton items={items} listName={listName} />
+            {stats.checked > 0 && (
+              <button
+                onClick={clearChecked}
+                className="text-sm text-slate hover:text-error flex items-center gap-1 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                Svuota
+              </button>
+            )}
+          </div>
         </motion.div>
       )}
 
@@ -125,6 +137,7 @@ export default function ShoppingList() {
                   item={item}
                   onToggle={() => toggleItem(item.id)}
                   onDelete={() => deleteItem(item.id)}
+                  onUpdate={updateItem}
                 />
               ))}
             </div>
@@ -158,6 +171,7 @@ export default function ShoppingList() {
                     item={item}
                     onToggle={() => toggleItem(item.id)}
                     onDelete={() => deleteItem(item.id)}
+                    onUpdate={updateItem}
                   />
                 ))}
               </motion.div>
