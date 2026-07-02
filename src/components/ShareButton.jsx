@@ -12,6 +12,7 @@ export default function ShareButton({ items, listName }) {
       items: items.map(item => ({
         name: item.name,
         quantity: item.quantity,
+        unit: item.unit || 'pz',
         category: item.category,
         price: item.price
       }))
@@ -47,8 +48,14 @@ export default function ShareButton({ items, listName }) {
     const text = items
       .filter(i => !i.checked)
       .map(item => {
+        const unit = item.unit || 'pz'
         let line = `- ${item.name}`
-        if (item.quantity > 1) line += ` (x${item.quantity})`
+        if (item.quantity > 1 || unit !== 'pz') {
+          const qtyDisplay = unit === 'pz' || unit === 'conf'
+            ? item.quantity
+            : item.quantity.toFixed(1).replace('.0', '')
+          line += ` (${qtyDisplay} ${unit})`
+        }
         if (item.price) line += ` - ${(item.price * item.quantity).toFixed(2)}€`
         return line
       })

@@ -38,8 +38,8 @@ function App() {
     setCurrentView(VIEWS.HOME)
   }
 
-  const handleCreateList = (name) => {
-    const newList = createList(name)
+  const handleCreateList = (name, supermarketId = null) => {
+    const newList = createList(name, supermarketId)
     // Apri subito la nuova lista
     setSelectedListId(newList.id)
     setCurrentView(VIEWS.LIST)
@@ -76,8 +76,8 @@ function App() {
         }
       default:
         return {
-          title: 'Lista della Spesa',
-          subtitle: 'Le tue liste',
+          title: 'Spesa a ruota libera',
+          subtitle: 'Tutte le tue liste, nei supermercati che ami.',
           showBack: false,
         }
     }
@@ -91,7 +91,6 @@ function App() {
         title={headerInfo.title}
         subtitle={headerInfo.subtitle}
         onBack={headerInfo.showBack ? handleBack : null}
-        onOpenSupermarkets={currentView === VIEWS.HOME ? handleOpenSupermarkets : null}
       />
       <main className="max-w-lg mx-auto px-4 pb-24">
         {currentView === VIEWS.LIST && (
@@ -109,6 +108,7 @@ function App() {
             onSelectList={handleSelectList}
             onCreateList={handleCreateList}
             onDeleteList={deleteList}
+            onNavigateToSupermarkets={handleOpenSupermarkets}
           />
         )}
       </main>

@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Trash2, Pencil, X, ChevronDown, Tag, Star } from 'lucide-react'
+import { Check, Trash2, Pencil, X, ChevronDown, Tag, Star, Euro, Heart } from 'lucide-react'
 import CategoryIcon from './ui/CategoryIcon'
 import { searchProducts, getPricesForFavorites } from '../data/productsDatabase'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
+import { useFavoriteProducts } from '../hooks/useFavoriteProducts'
 import { getSupermarketById } from '../data/supermarkets'
 
 const CATEGORIES = [
@@ -19,23 +20,41 @@ const CATEGORIES = [
   { id: 'altro', name: 'Altro' },
 ]
 
+const UNITS = [
+  { id: 'pz', name: 'pz', label: 'Pezzi' },
+  { id: 'kg', name: 'kg', label: 'Chilogrammi' },
+  { id: 'g', name: 'g', label: 'Grammi' },
+  { id: 'L', name: 'L', label: 'Litri' },
+  { id: 'mL', name: 'mL', label: 'Millilitri' },
+  { id: 'conf', name: 'conf', label: 'Confezioni' },
+]
+
 // Formatta prezzo in italiano
 function formatPrice(price) {
   return price.toFixed(2).replace('.', ',') + '€'
 }
 
 export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
-  const { name, quantity, category, price, checked } = item
+  const { name, quantity, unit = 'pz', category, price, checked } = item
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(name)
+  const [editQuantity, setEditQuantity] = useState(quantity)
+  const [editUnit, setEditUnit] = useState(unit)
+  const [editPrice, setEditPrice] = useState(price ? price.toFixed(2).replace('.', ',') : '')
   const [editCategory, setEditCategory] = useState(category)
   const [showCategories, setShowCategories] = useState(false)
+  const [showUnits, setShowUnits] = useState(false)
   const [showPrices, setShowPrices] = useState(false)
   const inputRef = useRef(null)
   const dropdownRef = useRef(null)
+  const unitsRef = useRef(null)
 
   // Hook per supermercati preferiti
   const { favorites, hasFavorites } = useFavoriteSupermarkets()
+
+  // Hook per prodotti preferiti
+  const { isFavorite, toggleFavorite } = useFavoriteProducts()
+  const isProductFavorite = isFavorite(name)
 
   // Cerca il prodotto nel database per mostrare i prezzi
   const databaseProducts = searchProducts(name)
@@ -60,6 +79,9 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowCategories(false)
       }
+      if (unitsRef.current && !unitsRef.current.contains(event.target)) {
+        setShowUnits(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -67,26 +89,38 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
 
   const handleStartEdit = () => {
     setEditName(name)
+    setEditQuantity(quantity)
+    setEditUnit(unit)
+    setEditPrice(price ? price.toFixed(2).replace('.', ',') : '')
     setEditCategory(category)
     setIsEditing(true)
   }
 
   const handleSave = () => {
     if (editName.trim()) {
+      const priceValue = editPrice ? parseFloat(editPrice.replace(',', '.')) : null
       onUpdate(item.id, {
         name: editName.trim(),
+        quantity: editQuantity,
+        unit: editUnit,
+        price: priceValue,
         category: editCategory
       })
     }
     setIsEditing(false)
     setShowCategories(false)
+    setShowUnits(false)
   }
 
   const handleCancel = () => {
     setEditName(name)
+    setEditQuantity(quantity)
+    setEditUnit(unit)
+    setEditPrice(price ? price.toFixed(2).replace('.', ',') : '')
     setEditCategory(category)
     setIsEditing(false)
     setShowCategories(false)
+    setShowUnits(false)
   }
 
   const handleKeyDown = (e) => {
@@ -124,6 +158,91 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
           className="w-full px-3 py-2 bg-snow border border-cloud rounded-lg text-night focus:outline-none focus:border-sky"
           placeholder="Nome prodotto..."
         />
+
+        {/* Riga quantità + unità + prezzo */}
+        <div className="flex gap-2">
+          {/* Quantità */}
+          <div className="flex items-center gap-1 bg-snow border border-cloud rounded-lg px-2 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setEditQuantity(Math.max(0.1, editQuantity - (editUnit === 'pz' || editUnit === 'conf' ? 1 : 0.1)))}
+              className="w-7 h-7 flex items-center justify-center text-slate hover:text-night transition-colors"
+            >
+              −
+            </button>
+            <input
+              type="text"
+              value={editUnit === 'pz' || editUnit === 'conf' ? editQuantity : editQuantity.toFixed(1).replace('.0', '')}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value.replace(',', '.'))
+                if (!isNaN(val) && val > 0) setEditQuantity(val)
+              }}
+              className="w-8 text-center text-sm font-medium text-night bg-transparent focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => setEditQuantity(editQuantity + (editUnit === 'pz' || editUnit === 'conf' ? 1 : 0.1))}
+              className="w-7 h-7 flex items-center justify-center text-slate hover:text-night transition-colors"
+            >
+              +
+            </button>
+          </div>
+
+          {/* Unità */}
+          <div className="relative flex-shrink-0" ref={unitsRef}>
+            <button
+              type="button"
+              onClick={() => setShowUnits(!showUnits)}
+              className="flex items-center gap-1 px-2 py-2 bg-snow border border-cloud rounded-lg text-sm text-night hover:border-sky transition-all"
+            >
+              <span className="font-medium">{editUnit}</span>
+              <ChevronDown className={`w-3 h-3 text-slate transition-transform ${showUnits ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+              {showUnits && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute bottom-full left-0 mb-1 bg-white rounded-xl shadow-soft-lg border border-cloud z-20 py-1 min-w-[100px]"
+                >
+                  {UNITS.map((u) => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => {
+                        setEditUnit(u.id)
+                        setShowUnits(false)
+                        if (u.id === 'pz' || u.id === 'conf') {
+                          setEditQuantity(Math.round(editQuantity) || 1)
+                        }
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-1.5 text-sm hover:bg-sky-light/30 transition-colors ${
+                        editUnit === u.id ? 'bg-sky-light/50 text-ocean' : 'text-night'
+                      }`}
+                    >
+                      <span className="font-medium">{u.name}</span>
+                      <span className="text-xs text-slate">{u.label}</span>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Prezzo */}
+          <div className="flex items-center gap-1 bg-snow border border-cloud rounded-lg px-2 flex-1">
+            <Euro className="w-4 h-4 text-slate flex-shrink-0" />
+            <input
+              type="text"
+              value={editPrice}
+              onChange={(e) => setEditPrice(e.target.value.replace(/[^0-9,\.]/g, ''))}
+              placeholder="0,00"
+              className="w-full py-2 text-sm text-night bg-transparent focus:outline-none"
+            />
+          </div>
+        </div>
 
         {/* Riga categoria + azioni */}
         <div className="flex gap-2">
@@ -253,7 +372,11 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
             )}
           </div>
           <div className="flex items-center gap-2 text-xs text-slate">
-            {quantity > 1 && <span>Qtà: {quantity}</span>}
+            {(quantity > 1 || unit !== 'pz') && (
+              <span>
+                {unit === 'pz' || unit === 'conf' ? quantity : quantity.toFixed(1).replace('.0', '')} {unit}
+              </span>
+            )}
             {price && (
               <span className={checked ? '' : 'text-ocean font-medium'}>
                 {(price * quantity).toFixed(2).replace('.', ',')} €
@@ -261,6 +384,24 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
             )}
           </div>
         </div>
+
+        {/* Favorite button */}
+        {!checked && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleFavorite({ name, category, unit, quantity, price })
+            }}
+            className={`flex-shrink-0 p-2 rounded-lg transition-all ${
+              isProductFavorite
+                ? 'text-rose-500 hover:text-rose-600 hover:bg-rose-50'
+                : 'text-slate-light opacity-0 group-hover:opacity-100 hover:text-rose-500 hover:bg-rose-50'
+            }`}
+            title={isProductFavorite ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'}
+          >
+            <Heart className={`w-4 h-4 ${isProductFavorite ? 'fill-current' : ''}`} />
+          </button>
+        )}
 
         {/* Edit button */}
         {!checked && (

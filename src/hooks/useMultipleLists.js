@@ -63,11 +63,12 @@ export function useMultipleLists() {
 
   const currentList = lists.find(l => l.id === currentListId) || lists[0]
 
-  // Crea nuova lista
-  const createList = useCallback((name) => {
+  // Crea nuova lista (opzionalmente associata a un supermercato)
+  const createList = useCallback((name, supermarketId = null) => {
     const newList = {
       id: crypto.randomUUID(),
       name: name.trim(),
+      supermarketId,
       createdAt: new Date().toISOString()
     }
     setLists(prev => [...prev, newList])
