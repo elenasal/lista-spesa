@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Filter, X, Heart, Tag, Store, Grid3X3 } from 'lucide-react'
-import { useProductFilters } from '../hooks/useProductFilters'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { getSupermarketById } from '../data/supermarkets'
 import CategoryIcon from './ui/CategoryIcon'
@@ -32,16 +31,14 @@ const CATEGORY_NAMES = {
   'altro': 'Altro',
 }
 
-export default function FilterBar({ listId }) {
-  const {
-    filters,
-    setFilter,
-    clearFilter,
-    clearAllFilters,
-    hasActiveFilters,
-    activeFilterCount,
-  } = useProductFilters(listId)
-
+export default function FilterBar({
+  filters,
+  setFilter,
+  clearFilter,
+  clearAllFilters,
+  hasActiveFilters,
+  activeFilterCount,
+}) {
   const { favoriteSupermarkets, hasFavorites: hasFavoriteSupermarkets } = useFavoriteSupermarkets()
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -54,7 +51,7 @@ export default function FilterBar({ listId }) {
   return (
     <>
       {/* Barra filtri collassata */}
-      <div className="flex items-center gap-2 mb-4 overflow-hidden">
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-hide">
         {/* Pulsante Filtra */}
         <button
           onClick={() => setIsExpanded(true)}
@@ -110,8 +107,9 @@ export default function FilterBar({ listId }) {
             {/* Rimuovi tutti */}
             <button
               onClick={clearAllFilters}
-              className="flex-shrink-0 px-2 py-1 text-xs text-slate hover:text-error transition-colors"
+              className="flex-shrink-0 flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate bg-slate-100 hover:bg-red-50 hover:text-error rounded-full transition-colors"
             >
+              <X className="w-3 h-3" />
               Rimuovi
             </button>
           </div>

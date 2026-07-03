@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add product filters and supermarket selection\n\n- Add FilterBar component with filters for supermarket, offers, favorites, and category\n- Add useProductFilters hook for filter state management with localStorage persistence\n- Enable supermarket selection per product in price comparison view\n- Show supermarket badge with best price \\(star\\) and sale \\(tag\\) icons\n- Make favorites section horizontally scrollable\n- Add blue background to add product form for visual separation\n- Auto-select supermarket when choosing a product suggestion\n- Close price details when clicking outside\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push)"
+    ]
+  }
+}

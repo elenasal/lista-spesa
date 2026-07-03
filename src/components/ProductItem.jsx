@@ -6,6 +6,7 @@ import { searchProducts, getPricesForFavorites } from '../data/productsDatabase'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useFavoriteProducts } from '../hooks/useFavoriteProducts'
 import { getSupermarketById } from '../data/supermarkets'
+import { getProductIcon } from '../data/productIcons'
 
 const CATEGORIES = [
   { id: 'frutta-verdura', name: 'Frutta e Verdura' },
@@ -68,7 +69,7 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
     ? getPricesForFavorites(matchedProduct, favorites)
     : []
 
-  // Supermercato selezionato per questo prodotto
+  // Supermercato salvato per questo prodotto
   const selectedSupermarket = supermarketId ? getSupermarketById(supermarketId) : null
   const selectedPriceInfo = supermarketId
     ? productPrices.find(p => p.supermarketId === supermarketId)
@@ -353,51 +354,49 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
       {/* Riga principale */}
       <div
         onClick={handleTogglePrices}
-        className={`group flex items-center gap-2 p-3 ${
+        className={`group flex items-center gap-3 pl-2 pr-3 py-3 ${
           productPrices.length > 0 && !checked ? 'cursor-pointer' : ''
         } ${!checked ? 'card-hover' : ''}`}
       >
-        {/* Checkbox */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onToggle()
-          }}
-          className={`flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-            checked
-              ? 'bg-sky border-sky'
-              : 'border-slate-light hover:border-sky'
-          }`}
-        >
-          {checked && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-            >
-              <Check className="w-4 h-4 text-white" strokeWidth={3} />
-            </motion.div>
-          )}
-        </button>
+        {/* Icona prodotto con checkbox overlay */}
+        <div className="relative flex-shrink-0">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-all ${
+            checked ? 'bg-gray-100 grayscale opacity-60' : 'bg-gradient-to-br from-sky-50 to-sky-100'
+          }`}>
+            {getProductIcon(name, category)}
+          </div>
+          {/* Checkbox - pallino azzurrino leggero */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggle()
+            }}
+            className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded flex items-center justify-center transition-all ${
+              checked
+                ? 'bg-emerald-500'
+                : 'bg-sky-200/60'
+            }`}
+          >
+            {checked && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              >
+                <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+              </motion.div>
+            )}
+          </button>
+        </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <p className={`font-medium truncate transition-all ${
-              checked ? 'text-slate line-through' : 'text-night'
-            }`}>
-              {name}
-            </p>
-            {/* Indicatore prezzi disponibili */}
-            {productPrices.length > 0 && !checked && (
-              <ChevronDown
-                className={`w-4 h-4 text-slate transition-transform flex-shrink-0 ${
-                  showPrices ? 'rotate-180' : ''
-                }`}
-              />
-            )}
-          </div>
-          <div className="flex items-center gap-2 text-xs text-slate">
+          <p className={`font-semibold truncate transition-all ${
+            checked ? 'text-slate line-through' : 'text-night'
+          }`}>
+            {name}
+          </p>
+          <div className="flex items-center gap-2 text-sm text-slate mt-0.5">
             {(quantity > 1 || unit !== 'pz') && (
               <span>
                 {unit === 'pz' || unit === 'conf' ? quantity : quantity.toFixed(1).replace('.0', '')} {unit}
@@ -405,15 +404,39 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
             )}
             {/* Mostra prezzo del supermercato selezionato o prezzo generico */}
             {selectedPriceInfo ? (
-              <span className={checked ? '' : 'text-ocean font-medium'}>
+              <span className={`inline-flex items-center gap-1 ${checked ? '' : 'text-ocean font-medium'}`}>
                 {selectedPriceInfo.onSale
                   ? (selectedPriceInfo.salePrice * quantity).toFixed(2).replace('.', ',')
                   : (selectedPriceInfo.effectivePrice * quantity).toFixed(2).replace('.', ',')
                 } €
+                {/* Freccia per aprire dettagli */}
+                {productPrices.length > 0 && !checked && (
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-ocean transition-transform ${
+                      showPrices ? 'rotate-180' : ''
+                    }`}
+                  />
+                )}
               </span>
             ) : price ? (
-              <span className={checked ? '' : 'text-ocean font-medium'}>
+              <span className={`inline-flex items-center gap-1 ${checked ? '' : 'text-ocean font-medium'}`}>
                 {(price * quantity).toFixed(2).replace('.', ',')} €
+                {productPrices.length > 0 && !checked && (
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-ocean transition-transform ${
+                      showPrices ? 'rotate-180' : ''
+                    }`}
+                  />
+                )}
+              </span>
+            ) : productPrices.length > 0 && !checked ? (
+              <span className="inline-flex items-center gap-1 text-ocean font-medium">
+                Confronta prezzi
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform ${
+                    showPrices ? 'rotate-180' : ''
+                  }`}
+                />
               </span>
             ) : null}
             {/* Icone e badge supermercato selezionato */}

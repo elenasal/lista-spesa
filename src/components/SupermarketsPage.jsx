@@ -1,16 +1,24 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, Store, Check, MapPin, Search, X, Locate } from 'lucide-react'
+import { Heart, Store, Check, MapPin, Search, X, Locate, ScanBarcode, Gift } from 'lucide-react'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
+import { useLoyaltyCards } from '../hooks/useLoyaltyCards'
 import { formatDistance } from '../data/supermarkets'
+import LoyaltyCardModal from './LoyaltyCardModal'
+import CardDisplayModal from './CardDisplayModal'
 
 export default function SupermarketsPage() {
   const { supermarketsWithFavorites, toggleFavorite, hasFavorites } = useFavoriteSupermarkets()
+  const { getCard, saveCard, removeCard, hasCard } = useLoyaltyCards()
   const [searchValue, setSearchValue] = useState('Novara, Italia')
   const [isSearchFocused, setIsSearchFocused] = useState(false)
 
+  // Modal tessera
+  const [editingCard, setEditingCard] = useState(null) // supermercato per cui editare tessera
+  const [displayingCard, setDisplayingCard] = useState(null) // supermercato per cui mostrare tessera
+
   return (
-    <div className="py-6">
+    <div className="pt-10 pb-6">
       {/* Barra di ricerca stile Google Maps */}
       <div className="mb-6">
         <div
@@ -112,25 +120,59 @@ export default function SupermarketsPage() {
                     </p>
                   </div>
                   {supermarket.isFavorite && (
-                    <p className="text-xs text-ocean mt-1">Selezionato</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs text-ocean">Selezionato</p>
+                      {hasCard(supermarket.id) && (
+                        <span className="flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          <ScanBarcode className="w-3 h-3" />
+                          Tessera
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
 
-                {/* Cuore preferito */}
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  className={`p-2.5 rounded-full transition-all flex-shrink-0 ${
-                    supermarket.isFavorite
-                      ? 'bg-pink-100 text-pink-500'
-                      : 'bg-cloud text-slate hover:bg-pink-50 hover:text-pink-400'
-                  }`}
-                >
-                  <Heart
-                    className={`w-5 h-5 transition-all ${
-                      supermarket.isFavorite ? 'fill-current' : ''
+                {/* Pulsanti azione */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {/* Pulsante tessera - solo per preferiti */}
+                  {supermarket.isFavorite && (
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (hasCard(supermarket.id)) {
+                          setDisplayingCard(supermarket)
+                        } else {
+                          setEditingCard(supermarket)
+                        }
+                      }}
+                      className={`p-2.5 rounded-full transition-all ${
+                        hasCard(supermarket.id)
+                          ? 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'
+                          : 'bg-cloud text-slate hover:bg-emerald-50 hover:text-emerald-500'
+                      }`}
+                      title={hasCard(supermarket.id) ? 'Mostra tessera' : 'Aggiungi tessera'}
+                    >
+                      <ScanBarcode className="w-5 h-5" />
+                    </motion.button>
+                  )}
+
+                  {/* Cuore preferito */}
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    className={`p-2.5 rounded-full transition-all ${
+                      supermarket.isFavorite
+                        ? 'bg-pink-100 text-pink-500'
+                        : 'bg-cloud text-slate hover:bg-pink-50 hover:text-pink-400'
                     }`}
-                  />
-                </motion.button>
+                  >
+                    <Heart
+                      className={`w-5 h-5 transition-all ${
+                        supermarket.isFavorite ? 'fill-current' : ''
+                      }`}
+                    />
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           ))}
@@ -172,6 +214,28 @@ export default function SupermarketsPage() {
           </div>
         )}
       </motion.div>
+
+      {/* Modal modifica tessera */}
+      <LoyaltyCardModal
+        isOpen={!!editingCard}
+        onClose={() => setEditingCard(null)}
+        supermarket={editingCard}
+        cardData={editingCard ? getCard(editingCard.id) : null}
+        onSave={(data) => saveCard(editingCard.id, data)}
+        onDelete={() => removeCard(editingCard.id)}
+      />
+
+      {/* Modal visualizza tessera */}
+      <CardDisplayModal
+        isOpen={!!displayingCard}
+        onClose={() => setDisplayingCard(null)}
+        supermarket={displayingCard}
+        cardData={displayingCard ? getCard(displayingCard.id) : null}
+        onEdit={() => {
+          setEditingCard(displayingCard)
+          setDisplayingCard(null)
+        }}
+      />
     </div>
   )
 }

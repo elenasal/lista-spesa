@@ -63,17 +63,25 @@ export function useMultipleLists() {
 
   const currentList = lists.find(l => l.id === currentListId) || lists[0]
 
-  // Crea nuova lista (opzionalmente associata a un supermercato)
-  const createList = useCallback((name, supermarketId = null) => {
+  // Crea nuova lista (opzionalmente associata a un supermercato e con budget)
+  const createList = useCallback((name, supermarketId = null, budget = null) => {
     const newList = {
       id: crypto.randomUUID(),
       name: name.trim(),
       supermarketId,
+      budget: budget ? parseFloat(budget) : null,
       createdAt: new Date().toISOString()
     }
     setLists(prev => [...prev, newList])
     setCurrentListId(newList.id)
     return newList
+  }, [])
+
+  // Aggiorna budget lista
+  const updateListBudget = useCallback((id, budget) => {
+    setLists(prev => prev.map(list =>
+      list.id === id ? { ...list, budget: budget ? parseFloat(budget) : null } : list
+    ))
   }, [])
 
   // Rinomina lista
@@ -119,5 +127,6 @@ export function useMultipleLists() {
     renameList,
     deleteList,
     switchList,
+    updateListBudget,
   }
 }

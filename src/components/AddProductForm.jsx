@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, ChevronDown, Euro, Tag, Star, ScanLine, X, Check, Heart, Trash2, Store } from 'lucide-react'
+import { Plus, ChevronDown, Euro, Tag, Star, ScanLine, X, Check, Heart, Trash2, Store, Settings } from 'lucide-react'
 import CategoryIcon from './ui/CategoryIcon'
 import BarcodeScanner from './BarcodeScanner'
 import { searchProducts, getBestPrice, getPricesForFavorites } from '../data/productsDatabase'
@@ -344,8 +344,9 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
             <button
               type="button"
               onClick={() => setShowAllFavorites(true)}
-              className="text-xs text-ocean hover:text-deep font-medium transition-colors"
+              className="flex items-center gap-1 text-xs text-ocean hover:text-deep font-medium transition-colors"
             >
+              <Settings className="w-3.5 h-3.5" />
               Gestisci
             </button>
           </div>

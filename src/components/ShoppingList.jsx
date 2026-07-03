@@ -12,7 +12,7 @@ import EmptyState from './ui/EmptyState'
 import LoadingSpinner from './ui/LoadingSpinner'
 import { PRODUCTS_DATABASE } from '../data/productsDatabase'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trash2, CheckCircle2, FilterX } from 'lucide-react'
+import { Trash2, CheckCircle2, FilterX, Wallet, Pencil, Check, X } from 'lucide-react'
 
 // Ordine delle categorie per la visualizzazione
 const CATEGORY_ORDER = [
@@ -67,10 +67,9 @@ function filterShoppingItems(items, filters, context) {
       }
     }
 
-    // 3. Filtro supermercato
+    // 3. Filtro supermercato - mostra solo prodotti assegnati a questo supermercato
     if (filters.supermarketId) {
-      const dbProduct = findProductInDatabase(item.name)
-      if (!dbProduct || !dbProduct.prices[filters.supermarketId]) {
+      if (item.supermarketId !== filters.supermarketId) {
         return false
       }
     }
@@ -91,7 +90,7 @@ function filterShoppingItems(items, filters, context) {
   })
 }
 
-export default function ShoppingList({ listId, listName = 'Lista della Spesa' }) {
+export default function ShoppingList({ listId, listName = 'Lista della Spesa', listBudget, onUpdateBudget }) {
   const {
     items,
     loading,
@@ -104,12 +103,14 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa' })
     stats,
   } = useShoppingList(listId)
 
-  const { filters, hasActiveFilters, clearAllFilters } = useProductFilters(listId)
+  const { filters, setFilter, clearFilter, clearAllFilters, hasActiveFilters, activeFilterCount } = useProductFilters(listId)
   const { favorites: favoriteProducts } = useFavoriteProducts()
   const { favorites: favoriteSupermarketIds } = useFavoriteSupermarkets()
 
   const [showChecked, setShowChecked] = useState(true)
   const [portalContainer, setPortalContainer] = useState(null)
+  const [isEditingBudget, setIsEditingBudget] = useState(false)
+  const [budgetInput, setBudgetInput] = useState('')
 
   // Crea Set dei preferiti per lookup veloce
   const favoritesSet = useMemo(() => {
@@ -159,7 +160,7 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa' })
   const sortedCategories = CATEGORY_ORDER.filter(cat => uncheckedByCategory[cat]?.length > 0)
 
   return (
-    <div className="py-6">
+    <div className="pt-10 pb-6">
       {/* Add form */}
       <AddProductForm onAdd={addItem} getSuggestions={getSuggestedProducts} />
 
@@ -180,30 +181,98 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa' })
                 <span className="text-slate-light"> · {hiddenCount} nascosti</span>
               )}
             </p>
-            {stats.totalPrice > 0 && (
-              <span className="text-sm font-semibold text-ocean bg-sky-light/50 px-2 py-0.5 rounded-full">
-                ~{stats.totalPrice.toFixed(2).replace('.', ',')} €
-              </span>
+            {(stats.totalPrice > 0 || listBudget) && (
+              <div className="flex items-center gap-2">
+                {stats.totalPrice > 0 && (
+                  <span className={`text-sm font-semibold px-2 py-0.5 rounded-full ${
+                    listBudget && stats.totalPrice > listBudget
+                      ? 'text-rose-600 bg-rose-50'
+                      : 'text-ocean bg-sky-light/50'
+                  }`}>
+                    ~{stats.totalPrice.toFixed(2).replace('.', ',')} €
+                  </span>
+                )}
+                {listBudget && !isEditingBudget && (
+                  <button
+                    onClick={() => {
+                      setBudgetInput(listBudget.toString())
+                      setIsEditingBudget(true)
+                    }}
+                    className="flex items-center gap-1 text-sm font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full hover:bg-emerald-100 transition-colors"
+                  >
+                    <Wallet className="w-3.5 h-3.5" />
+                    {listBudget.toFixed(2).replace('.', ',')} €
+                  </button>
+                )}
+                {!listBudget && !isEditingBudget && (
+                  <button
+                    onClick={() => {
+                      setBudgetInput('')
+                      setIsEditingBudget(true)
+                    }}
+                    className="flex items-center gap-1 text-xs text-slate hover:text-emerald-600 transition-colors"
+                  >
+                    <Wallet className="w-3.5 h-3.5" />
+                    Imposta budget
+                  </button>
+                )}
+                {isEditingBudget && (
+                  <div className="flex items-center gap-1">
+                    <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                    <input
+                      autoFocus
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      min="0"
+                      value={budgetInput}
+                      onChange={(e) => setBudgetInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          onUpdateBudget(budgetInput || null)
+                          setIsEditingBudget(false)
+                        } else if (e.key === 'Escape') {
+                          setIsEditingBudget(false)
+                        }
+                      }}
+                      placeholder="0,00"
+                      className="w-20 px-2 py-0.5 text-sm bg-white border border-emerald-200 rounded-lg focus:outline-none focus:border-emerald-400"
+                    />
+                    <span className="text-sm text-slate">€</span>
+                    <button
+                      onClick={() => {
+                        onUpdateBudget(budgetInput || null)
+                        setIsEditingBudget(false)
+                      }}
+                      className="p-1 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setIsEditingBudget(false)}
+                      className="p-1 text-slate hover:bg-slate-100 rounded transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            {stats.checked > 0 && (
-              <button
-                onClick={clearChecked}
-                className="text-sm text-slate hover:text-error flex items-center gap-1 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                Svuota
-              </button>
-            )}
-          </div>
         </motion.div>
       )}
 
       {/* Filter bar */}
       {items.length > 0 && (
-        <FilterBar listId={listId} />
+        <FilterBar
+          filters={filters}
+          setFilter={setFilter}
+          clearFilter={clearFilter}
+          clearAllFilters={clearAllFilters}
+          hasActiveFilters={hasActiveFilters}
+          activeFilterCount={activeFilterCount}
+        />
       )}
 
       {/* Empty state - lista vuota */}
@@ -265,14 +334,23 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa' })
       {/* Checked items */}
       {checkedItems.length > 0 && (
         <div className="mt-6">
-          <button
-            onClick={() => setShowChecked(!showChecked)}
-            className="flex items-center gap-2 text-sm text-slate hover:text-night transition-colors mb-2 px-1"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Completati ({checkedItems.length})</span>
-            <span className="text-xs">{showChecked ? '▼' : '▶'}</span>
-          </button>
+          <div className="flex items-center justify-between mb-2 px-1">
+            <button
+              onClick={() => setShowChecked(!showChecked)}
+              className="flex items-center gap-2 text-sm text-slate hover:text-night transition-colors"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Completati ({checkedItems.length})</span>
+              <span className="text-xs">{showChecked ? '▼' : '▶'}</span>
+            </button>
+            <button
+              onClick={clearChecked}
+              className="flex items-center gap-1 text-xs text-slate hover:text-error transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Svuota</span>
+            </button>
+          </div>
 
           <AnimatePresence>
             {showChecked && (

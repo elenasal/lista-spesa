@@ -3,6 +3,9 @@ import { SUPERMARKETS, getSupermarketsByDistance } from '../data/supermarkets'
 
 const STORAGE_KEY = 'favorite-supermarkets'
 
+// Supermercati preferiti di default (demo)
+const DEFAULT_FAVORITES = ['esselunga-viale-giulio-cesare']
+
 // Carica preferiti da localStorage
 function loadFavorites() {
   try {
@@ -15,8 +18,8 @@ function loadFavorites() {
   } catch {
     // Ignora errori
   }
-  // Default: nessun preferito
-  return []
+  // Default: Esselunga come demo
+  return DEFAULT_FAVORITES
 }
 
 // Salva preferiti in localStorage

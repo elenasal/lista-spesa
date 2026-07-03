@@ -21,6 +21,7 @@ function App() {
     createList,
     deleteList,
     switchList,
+    updateListBudget,
   } = useMultipleLists()
 
   // Vista corrente e ID lista selezionata
@@ -38,8 +39,8 @@ function App() {
     setCurrentView(VIEWS.HOME)
   }
 
-  const handleCreateList = (name, supermarketId = null) => {
-    const newList = createList(name, supermarketId)
+  const handleCreateList = (name, supermarketId = null, budget = null) => {
+    const newList = createList(name, supermarketId, budget)
     // Apri subito la nuova lista
     setSelectedListId(newList.id)
     setCurrentView(VIEWS.LIST)
@@ -85,8 +86,10 @@ function App() {
 
   const headerInfo = getHeaderInfo()
 
+  const isHome = currentView === VIEWS.HOME
+
   return (
-    <div className="min-h-screen bg-snow">
+    <div className="min-h-screen bg-white">
       <Header
         title={headerInfo.title}
         subtitle={headerInfo.subtitle}
@@ -97,6 +100,8 @@ function App() {
           <ShoppingList
             listId={selectedListId}
             listName={selectedList?.name}
+            listBudget={selectedList?.budget}
+            onUpdateBudget={(budget) => updateListBudget(selectedListId, budget)}
           />
         )}
         {currentView === VIEWS.SUPERMARKETS && (
