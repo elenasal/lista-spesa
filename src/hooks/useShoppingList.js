@@ -180,6 +180,24 @@ export function useShoppingList(listId = null) {
     setItems(prev => prev.filter(item => item.id !== id))
   }, [])
 
+  // Riordina i prodotti attivi (non completati) DENTRO una categoria.
+  // Riscrive l'array mantenendo fisse le posizioni di tutti gli altri item
+  // (completati e prodotti di altre categorie).
+  const reorderCategoryItems = useCallback((category, orderedCatItems) => {
+    setItems(prev => {
+      const orderedIds = orderedCatItems.map(i => i.id)
+      const byId = new Map(prev.map(i => [i.id, i]))
+      let idx = 0
+      return prev.map(it => {
+        if (!it.checked && (it.category || 'altro') === category) {
+          const nextId = orderedIds[idx++]
+          return byId.get(nextId) || it
+        }
+        return it
+      })
+    })
+  }, [])
+
   // Clear all checked items
   const clearChecked = useCallback(() => {
     setItems(prev => prev.filter(item => !item.checked))
@@ -233,6 +251,7 @@ export function useShoppingList(listId = null) {
     toggleItem,
     updateItem,
     deleteItem,
+    reorderCategoryItems,
     clearChecked,
     refresh: () => setItems(loadItems(listId)),
     getSuggestedProducts,

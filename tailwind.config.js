@@ -56,9 +56,9 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        'soft': '0 2px 8px -2px rgba(14, 165, 233, 0.08), 0 2px 4px -2px rgba(14, 165, 233, 0.04)',
-        'soft-lg': '0 8px 24px -4px rgba(14, 165, 233, 0.12), 0 4px 8px -4px rgba(14, 165, 233, 0.06)',
-        'soft-xl': '0 16px 40px -8px rgba(14, 165, 233, 0.16), 0 8px 16px -8px rgba(14, 165, 233, 0.08)',
+        'soft': '0 4px 12px -2px rgba(14, 165, 233, 0.15), 0 2px 6px -2px rgba(14, 165, 233, 0.1)',
+        'soft-lg': '0 8px 24px -4px rgba(14, 165, 233, 0.18), 0 4px 10px -4px rgba(14, 165, 233, 0.12)',
+        'soft-xl': '0 16px 40px -8px rgba(14, 165, 233, 0.22), 0 8px 16px -8px rgba(14, 165, 233, 0.14)',
         'glow': '0 0 20px rgba(56, 189, 248, 0.3)',
       },
       animation: {

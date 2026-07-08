@@ -126,7 +126,7 @@ function formatPrice(price) {
   return price.toFixed(2).replace('.', ',') + '€'
 }
 
-export default function AddProductForm({ onAdd, getSuggestions }) {
+export default function AddProductForm({ onAdd, getSuggestions, listSupermarketId = null }) {
   const [name, setName] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [unit, setUnit] = useState('pz')
@@ -141,6 +141,8 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
   const [showScanner, setShowScanner] = useState(false)
   const [scannedProduct, setScannedProduct] = useState(null)
   const [showAllFavorites, setShowAllFavorites] = useState(false)
+  // Altezza massima dropdown suggerimenti (adattata alla tastiera su mobile)
+  const [suggestionsMaxH, setSuggestionsMaxH] = useState(320)
   const dropdownRef = useRef(null)
   const unitsRef = useRef(null)
   const suggestionsRef = useRef(null)
@@ -149,13 +151,21 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
   // Hook per supermercati preferiti
   const { favorites, hasFavorites } = useFavoriteSupermarkets()
 
+  // In una lista legata a un supermercato, i prezzi si mostrano SOLO per quel
+  // supermercato; altrimenti per tutti i preferiti.
+  const priceSupermarketIds = listSupermarketId ? [listSupermarketId] : favorites
+  const hasPriceSupermarkets = priceSupermarketIds.length > 0
+
   // Hook per prodotti preferiti
   const { favorites: favoriteProducts, hasFavorites: hasFavoriteProducts, removeFavorite } = useFavoriteProducts()
 
   const selectedCategory = CATEGORIES.find(c => c.id === category)
 
-  // Cerca prodotti nel database
-  const databaseProducts = searchProducts(name)
+  // Cerca prodotti nel database. In una lista legata a un supermercato mostra
+  // solo i prodotti effettivamente venduti lì (con prezzo per quel supermercato).
+  const databaseProducts = searchProducts(name).filter(
+    (p) => !listSupermarketId || p.prices?.[listSupermarketId]
+  )
 
   // Ottieni anche suggerimenti basati sullo storico (se disponibile)
   const historySuggestions = getSuggestions ? getSuggestions(name) : []
@@ -202,6 +212,47 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // Adatta l'altezza della dropdown suggerimenti allo spazio visibile sopra la
+  // tastiera (mobile). Usa visualViewport: quando la tastiera si apre, l'altezza
+  // visibile si riduce e la lista scrolla internamente invece di finire coperta.
+  useEffect(() => {
+    if (!showSuggestions) return
+
+    const updateMaxHeight = () => {
+      const el = inputRef.current
+      const vv = window.visualViewport
+      if (!el) return
+      const inputBottom = el.getBoundingClientRect().bottom
+      // Bordo inferiore realmente visibile (tiene conto della tastiera)
+      const visibleBottom = vv ? vv.offsetTop + vv.height : window.innerHeight
+      const available = visibleBottom - inputBottom - 12 // margine
+      setSuggestionsMaxH(Math.max(140, Math.min(360, available)))
+    }
+
+    updateMaxHeight()
+    const vv = window.visualViewport
+    vv?.addEventListener('resize', updateMaxHeight)
+    vv?.addEventListener('scroll', updateMaxHeight)
+    return () => {
+      vv?.removeEventListener('resize', updateMaxHeight)
+      vv?.removeEventListener('scroll', updateMaxHeight)
+    }
+  }, [showSuggestions])
+
+  // Al focus dell'input, su mobile lo porta appena sotto l'header sticky così i
+  // suggerimenti hanno spazio prima della tastiera.
+  const handleInputFocus = () => {
+    setShowCategories(false)
+    if (name.trim()) setShowSuggestions(true)
+    setTimeout(() => {
+      const el = inputRef.current
+      if (!el) return
+      const HEADER_OFFSET = 112 // altezza header sticky + margine di sicurezza
+      const top = el.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET
+      if (top > 0) window.scrollTo({ top, behavior: 'smooth' })
+    }, 250)
+  }
+
   const handleNameChange = (e) => {
     const value = e.target.value
     setName(value)
@@ -221,10 +272,10 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
     setShowSuggestions(false)
 
     // Se il prodotto è dal database, imposta il prezzo
-    if (suggestion.fromDatabase && hasFavorites) {
+    if (suggestion.fromDatabase && hasPriceSupermarkets) {
       if (specificSupermarketId) {
         // Supermercato specifico selezionato
-        const prices = getPricesForFavorites(suggestion, favorites)
+        const prices = getPricesForFavorites(suggestion, priceSupermarketIds)
         const priceInfo = prices.find(p => p.supermarketId === specificSupermarketId)
         if (priceInfo) {
           const effectivePrice = priceInfo.onSale ? priceInfo.salePrice : priceInfo.effectivePrice
@@ -233,7 +284,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
         }
       } else {
         // Usa il prezzo migliore
-        const bestPrice = getBestPrice(suggestion, favorites)
+        const bestPrice = getBestPrice(suggestion, priceSupermarketIds)
         if (bestPrice) {
           setPrice(bestPrice.price.toFixed(2).replace('.', ','))
           setSelectedSupermarketId(bestPrice.supermarketId)
@@ -253,13 +304,8 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
     setShowCategories(false)
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!name.trim() || loading) return
-
-    setLoading(true)
-    const priceValue = price ? parseFloat(price.replace(',', '.')) : null
-    await onAdd(name, quantity, unit, category, priceValue, selectedSupermarketId)
+  // Riporta il form ai valori di default (usato da "Annulla" e dopo l'invio)
+  const resetForm = () => {
     setName('')
     setQuantity(1)
     setUnit('pz')
@@ -267,14 +313,38 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
     setCategory('altro')
     setSelectedSupermarketId(null)
     setManualCategory(false)
+    setShowSuggestions(false)
+    setShowCategories(false)
+    setShowUnits(false)
+  }
+
+  // Il form è "sporco" (ci sono valori da annullare) se l'utente ha iniziato a compilarlo
+  const isDirty =
+    name.trim() !== '' ||
+    price !== '' ||
+    quantity !== 1 ||
+    unit !== 'pz' ||
+    category !== 'altro'
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!name.trim() || loading) return
+
+    setLoading(true)
+    const priceValue = price ? parseFloat(price.replace(',', '.')) : null
+    // Se la lista è legata a un supermercato, il prodotto eredita quel supermercato
+    // (salvo scelta esplicita di un altro dai suggerimenti prezzi)
+    const effectiveSupermarketId = selectedSupermarketId || listSupermarketId || null
+    await onAdd(name, quantity, unit, category, priceValue, effectiveSupermarketId)
+    resetForm()
     setLoading(false)
   }
 
   // Render prezzi per un prodotto del database (cliccabili per selezionare supermercato)
   const renderProductPrices = (product) => {
-    if (!hasFavorites || !product.fromDatabase) return null
+    if (!hasPriceSupermarkets || !product.fromDatabase) return null
 
-    const prices = getPricesForFavorites(product, favorites)
+    const prices = getPricesForFavorites(product, priceSupermarketIds)
     if (prices.length === 0) return null
 
     return (
@@ -326,7 +396,8 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
       favProduct.defaultQuantity || 1,
       favProduct.unit || 'pz',
       favProduct.category,
-      favProduct.price
+      favProduct.price,
+      listSupermarketId || null
     )
   }
 
@@ -334,7 +405,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
     <div className="space-y-4">
       {/* Sezione preferiti quick-add - scroll orizzontale */}
       {hasFavoriteProducts && (
-        <div className="space-y-2">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Heart className="w-4 h-4 text-rose-500 fill-current" />
@@ -359,7 +430,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
                 onClick={() => handleQuickAddFavorite(fav)}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-white border border-cloud rounded-xl text-sm text-night hover:border-rose-300 hover:bg-rose-50 transition-all shadow-soft"
+                className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-rose-50 border border-rose-200 rounded-xl text-sm text-night hover:border-rose-300 hover:bg-rose-100 transition-all shadow-soft"
               >
                 <CategoryIcon category={fav.category} className="w-4 h-4 text-ocean" />
                 <span className="whitespace-nowrap">{fav.name}</span>
@@ -370,8 +441,15 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
         </div>
       )}
 
-      {/* Sezione aggiungi prodotto - fascia azzurrina */}
-      <div className="bg-sky-light/50 -mx-4 px-4 py-4 sm:-mx-6 sm:px-6">
+      {/* Sezione aggiungi prodotto - box arrotondato animato (stesso stile del box "Nuova lista" in home) */}
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="px-4 py-4 rounded-2xl"
+        style={{ backgroundColor: 'rgb(57 183 239 / 29%)' }}
+      >
       <form onSubmit={handleSubmit} className="space-y-3">
       {/* Main input row */}
       <div className="flex gap-2">
@@ -380,10 +458,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
             type="text"
             value={name}
             onChange={handleNameChange}
-            onFocus={() => {
-              setShowCategories(false)
-              if (name.trim()) setShowSuggestions(true)
-            }}
+            onFocus={handleInputFocus}
             placeholder="Aggiungi prodotto..."
             className="w-full px-4 py-3 bg-white border border-cloud rounded-xl text-night placeholder:text-slate-light focus:outline-none focus:border-sky focus:ring-2 focus:ring-sky/20 transition-all shadow-soft"
             disabled={loading}
@@ -397,13 +472,14 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-soft-lg border border-cloud z-20 py-1 max-h-80 overflow-y-auto"
+                style={{ maxHeight: suggestionsMaxH }}
+                className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-soft-lg border border-cloud z-20 py-1 overflow-y-auto"
               >
                 {/* Sezione prodotti dal database */}
                 {databaseProducts.length > 0 && (
                   <>
                     <p className="px-3 py-1.5 text-xs font-semibold text-slate uppercase">
-                      Prodotti {hasFavorites && '· Confronta prezzi'}
+                      Prodotti {hasPriceSupermarkets && (listSupermarketId ? '· Prezzo' : '· Confronta prezzi')}
                     </p>
                     {allSuggestions
                       .filter(s => s.fromDatabase)
@@ -473,8 +549,17 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
         </button>
       </div>
 
-      {/* Options row */}
-      <div className="flex flex-wrap gap-2">
+      {/* Options row - compare solo quando inizi a compilare (come "Nuova lista" in home) */}
+      <AnimatePresence initial={false}>
+        {isDirty && (
+          <motion.div
+            key="options-row"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="flex flex-wrap gap-2"
+          >
         {/* Category selector */}
         <div className="relative flex-1" ref={dropdownRef}>
           <button
@@ -595,7 +680,19 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
             className="w-14 py-2 text-sm text-center text-night bg-transparent focus:outline-none"
           />
         </div>
-      </div>
+
+        {/* Annulla - ripulisce il form e richiude la riga (come in home su "Nuova lista") */}
+        <button
+          type="button"
+          onClick={resetForm}
+          className="flex items-center gap-1.5 px-3 py-2 text-ocean hover:text-deep hover:bg-white/60 rounded-lg text-sm font-medium transition-colors flex-shrink-0"
+        >
+          <X className="w-4 h-4" />
+          Annulla
+        </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Barcode Scanner */}
       <BarcodeScanner
@@ -668,7 +765,8 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
                       1,
                       'pz',
                       scannedProduct.category,
-                      scannedProduct.price
+                      scannedProduct.price,
+                      listSupermarketId || null
                     )
                     setScannedProduct(null)
                   }}
@@ -772,7 +870,7 @@ export default function AddProductForm({ onAdd, getSuggestions }) {
         )}
       </AnimatePresence>
       </form>
-      </div>
+      </motion.div>
     </div>
   )
 }

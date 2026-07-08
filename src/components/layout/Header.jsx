@@ -19,52 +19,48 @@ export default function Header({ title, subtitle, onBack, onOpenSupermarkets, ri
           <div className="absolute -top-4 right-8 w-24 h-24 bg-white/25 rounded-full blur-md" />
           <div className="absolute top-4 left-4 w-16 h-16 bg-sky-200/30 rounded-full blur-sm" />
           <div className="absolute top-0 left-1/2 w-12 h-12 bg-white/20 rounded-full blur-sm" />
+          {/* Icona watermark piccola e fluttuante */}
+          <motion.div
+            className="absolute top-6 right-7 text-white/20"
+            animate={{ y: [0, -7, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <ShoppingBag className="w-9 h-9" strokeWidth={1.5} />
+          </motion.div>
         </div>
 
         {/* Contenuto */}
         <div className="relative max-w-lg mx-auto px-5 pt-8 pb-4">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              {/* Saluto */}
+          <div className="flex-1">
+            {/* Saluto */}
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-sky-200/90 text-sm font-medium mb-1"
+            >
+              Bentornato
+            </motion.p>
+            {/* Titolo principale */}
+            <motion.h1
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="text-white text-2xl font-bold leading-tight"
+            >
+              {title || 'La tua spesa'}
+            </motion.h1>
+            {/* Sottotitolo */}
+            {subtitle && (
               <motion.p
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="text-sky-200/90 text-sm font-medium mb-1"
+                transition={{ delay: 0.2 }}
+                className="text-sky-100/70 text-sm mt-1.5 max-w-[240px]"
               >
-                Bentornato
+                {subtitle}
               </motion.p>
-              {/* Titolo principale */}
-              <motion.h1
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="text-white text-2xl font-bold leading-tight"
-              >
-                {title || 'La tua spesa'}
-              </motion.h1>
-              {/* Sottotitolo */}
-              {subtitle && (
-                <motion.p
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-sky-100/70 text-sm mt-1.5 max-w-[240px]"
-                >
-                  {subtitle}
-                </motion.p>
-              )}
-            </div>
-
-            {/* Icona decorativa */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring' }}
-              className="w-14 h-14 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20"
-            >
-              <ShoppingBag className="w-7 h-7 text-white" />
-            </motion.div>
+            )}
           </div>
         </div>
 

@@ -6,13 +6,13 @@ import { useFavoriteProducts } from '../hooks/useFavoriteProducts'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import ProductItem from './ProductItem'
 import AddProductForm from './AddProductForm'
-import ShareButton from './ShareButton'
+import ShareModal from './ShareModal'
 import FilterBar from './FilterBar'
 import EmptyState from './ui/EmptyState'
 import LoadingSpinner from './ui/LoadingSpinner'
 import { PRODUCTS_DATABASE } from '../data/productsDatabase'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Trash2, CheckCircle2, FilterX, Wallet, Pencil, Check, X } from 'lucide-react'
+import { motion, AnimatePresence, Reorder } from 'framer-motion'
+import { Trash2, CheckCircle2, FilterX, Wallet, Pencil, Check, X, Share2 } from 'lucide-react'
 
 // Ordine delle categorie per la visualizzazione
 const CATEGORY_ORDER = [
@@ -90,7 +90,7 @@ function filterShoppingItems(items, filters, context) {
   })
 }
 
-export default function ShoppingList({ listId, listName = 'Lista della Spesa', listBudget, onUpdateBudget }) {
+export default function ShoppingList({ listId, listName = 'Lista della Spesa', listBudget, listSupermarketId = null, onUpdateBudget }) {
   const {
     items,
     loading,
@@ -98,17 +98,19 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
     toggleItem,
     updateItem,
     deleteItem,
+    reorderCategoryItems,
     clearChecked,
     getSuggestedProducts,
     stats,
   } = useShoppingList(listId)
 
-  const { filters, setFilter, clearFilter, clearAllFilters, hasActiveFilters, activeFilterCount } = useProductFilters(listId)
+  const { filters, setFilter, clearFilter, clearAllFilters, hasActiveFilters, activeFilterCount } = useProductFilters(listId, { defaultSupermarketId: listSupermarketId })
   const { favorites: favoriteProducts } = useFavoriteProducts()
   const { favorites: favoriteSupermarketIds } = useFavoriteSupermarkets()
 
   const [showChecked, setShowChecked] = useState(true)
   const [portalContainer, setPortalContainer] = useState(null)
+  const [showShare, setShowShare] = useState(false)
   const [isEditingBudget, setIsEditingBudget] = useState(false)
   const [budgetInput, setBudgetInput] = useState('')
 
@@ -162,7 +164,7 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
   return (
     <div className="pt-10 pb-6">
       {/* Add form */}
-      <AddProductForm onAdd={addItem} getSuggestions={getSuggestedProducts} />
+      <AddProductForm onAdd={addItem} getSuggestions={getSuggestedProducts} listSupermarketId={listSupermarketId} />
 
       {/* Stats bar */}
       {items.length > 0 && (
@@ -305,30 +307,59 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
 
       {/* Unchecked items by category */}
       <AnimatePresence mode="popLayout">
-        {sortedCategories.map(category => (
-          <motion.div
-            key={category}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mb-4"
-          >
-            <h3 className="text-xs font-semibold text-slate uppercase tracking-wider mb-2 px-1">
-              {CATEGORY_NAMES[category]}
-            </h3>
-            <div className="space-y-2">
-              {uncheckedByCategory[category].map(item => (
-                <ProductItem
-                  key={item.id}
-                  item={item}
-                  onToggle={() => toggleItem(item.id)}
-                  onDelete={() => deleteItem(item.id)}
-                  onUpdate={updateItem}
-                />
-              ))}
-            </div>
-          </motion.div>
-        ))}
+        {sortedCategories.map(category => {
+          const catItems = uncheckedByCategory[category]
+          // Riordino attivo solo con 2+ prodotti e senza filtri (che nasconderebbero item)
+          const canReorder = catItems.length > 1 && !hasActiveFilters
+
+          return (
+            <motion.div
+              key={category}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-4"
+            >
+              <h3 className="text-xs font-semibold text-slate uppercase tracking-wider mb-2 px-1">
+                {CATEGORY_NAMES[category]}
+              </h3>
+              {canReorder ? (
+                <Reorder.Group
+                  as="div"
+                  axis="y"
+                  values={catItems}
+                  onReorder={(newOrder) => reorderCategoryItems(category, newOrder)}
+                  className="space-y-2"
+                >
+                  {catItems.map(item => (
+                    <ProductItem
+                      key={item.id}
+                      item={item}
+                      reorderable
+                      listSupermarketId={listSupermarketId}
+                      onToggle={() => toggleItem(item.id)}
+                      onDelete={() => deleteItem(item.id)}
+                      onUpdate={updateItem}
+                    />
+                  ))}
+                </Reorder.Group>
+              ) : (
+                <div className="space-y-2">
+                  {catItems.map(item => (
+                    <ProductItem
+                      key={item.id}
+                      item={item}
+                      listSupermarketId={listSupermarketId}
+                      onToggle={() => toggleItem(item.id)}
+                      onDelete={() => deleteItem(item.id)}
+                      onUpdate={updateItem}
+                    />
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )
+        })}
       </AnimatePresence>
 
       {/* Checked items */}
@@ -364,6 +395,7 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
                   <ProductItem
                     key={item.id}
                     item={item}
+                    listSupermarketId={listSupermarketId}
                     onToggle={() => toggleItem(item.id)}
                     onDelete={() => deleteItem(item.id)}
                     onUpdate={updateItem}
@@ -375,11 +407,21 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
         </div>
       )}
 
-      {/* ShareButton nell'header via portal */}
-      {portalContainer && createPortal(
-        <ShareButton items={items} listName={listName} />,
+      {/* Trigger condivisione nell'header (via portal) */}
+      {portalContainer && items.length > 0 && createPortal(
+        <button onClick={() => setShowShare(true)} aria-label="Condividi lista" title="Condividi lista">
+          <Share2 />
+        </button>,
         portalContainer
       )}
+
+      {/* Modal condivisione (fuori dal portal → leggibile) */}
+      <ShareModal
+        isOpen={showShare}
+        onClose={() => setShowShare(false)}
+        items={items}
+        listName={listName}
+      />
     </div>
   )
 }

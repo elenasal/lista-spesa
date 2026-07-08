@@ -98,6 +98,16 @@ Dati salvati in `localStorage` con chiave `lista-spesa-items`.
 - [ ] OCR lista cartacea (foto lista scritta → import prodotti)
 - [ ] Notifiche offerte (avviso prodotto in lista in offerta)
 - [ ] Filtri per supermercato
+- [ ] Budget lista (impostare limite spesa per lista)
+
+### Fase 6 - Fidelity & Tessere (Completata)
+- [x] Tessere fedeltà supermercati (Fidaty, Carta Insieme, etc.)
+  - Associare numero tessera/barcode a ogni supermercato
+  - Mostrare barcode per scansione in cassa
+- [x] Raccolta punti
+  - Tracciare se raccolta punti attiva per supermercato
+  - Saldo punti (inserimento manuale)
+  - Scadenza punti con avviso se in scadenza
 
 ### Implementato (Sessione corrente)
 - [x] Unità di misura (pz, kg, g, L, mL, conf)
@@ -107,3 +117,5 @@ Dati salvati in `localStorage` con chiave `lista-spesa-items`.
 - [x] Sezione supermercati nella home
 - [x] Liste per supermercato specifico
 - [x] Nuovo branding "Spesa a ruota libera"
+- [x] Budget lista (impostare/modificare limite spesa, indicatore rosso se sforato)
+- [x] Tessere fedeltà supermercati con barcode e raccolta punti

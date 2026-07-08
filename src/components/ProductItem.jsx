@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Trash2, Pencil, X, ChevronDown, Tag, Star, Euro, Heart, MoreVertical, Store } from 'lucide-react'
+import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
+import { Check, Trash2, Pencil, X, ChevronDown, Tag, Star, Euro, Heart, MoreVertical, Store, GripVertical } from 'lucide-react'
+import { useLongPressDrag } from '../hooks/useLongPressDrag'
 import CategoryIcon from './ui/CategoryIcon'
 import { searchProducts, getPricesForFavorites } from '../data/productsDatabase'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
@@ -35,8 +36,10 @@ function formatPrice(price) {
   return price.toFixed(2).replace('.', ',') + '€'
 }
 
-export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
+export default function ProductItem({ item, onToggle, onDelete, onUpdate, reorderable = false, listSupermarketId = null }) {
   const { name, quantity, unit = 'pz', category, price, checked, supermarketId } = item
+  const dragControls = useDragControls()
+  const longPress = useLongPressDrag(dragControls)
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(name)
   const [editQuantity, setEditQuantity] = useState(quantity)
@@ -65,9 +68,17 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
   const matchedProduct = databaseProducts.find(p =>
     p.name.toLowerCase() === name.toLowerCase()
   )
-  const productPrices = matchedProduct && hasFavorites
-    ? getPricesForFavorites(matchedProduct, favorites)
+  // In una lista legata a un supermercato, i prezzi/confronto si limitano a quel
+  // supermercato; altrimenti a tutti i preferiti.
+  const priceSupermarketIds = listSupermarketId ? [listSupermarketId] : favorites
+  const hasPriceSupermarkets = priceSupermarketIds.length > 0
+  const productPrices = matchedProduct && hasPriceSupermarkets
+    ? getPricesForFavorites(matchedProduct, priceSupermarketIds)
     : []
+
+  // Nelle liste legate a un supermercato non si sceglie il supermercato:
+  // niente pannello di confronto, si mostra solo il prezzo di quel supermercato.
+  const canCompare = !listSupermarketId && productPrices.length > 0
 
   // Supermercato salvato per questo prodotto
   const selectedSupermarket = supermarketId ? getSupermarketById(supermarketId) : null
@@ -157,7 +168,7 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
   const handleTogglePrices = (e) => {
     // Non aprire se stiamo cliccando su altri bottoni
     if (e.target.closest('button')) return
-    if (productPrices.length > 0 && !checked) {
+    if (canCompare && !checked) {
       setShowPrices(!showPrices)
     }
   }
@@ -330,9 +341,22 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
   }
 
   // Modalita' visualizzazione normale
+  // Radice: Reorder.Item quando riordinabile, altrimenti motion.div
+  const Root = reorderable ? Reorder.Item : motion.div
+  const rootProps = reorderable
+    ? {
+        as: 'div',
+        value: item,
+        dragListener: false,
+        dragControls,
+        whileDrag: { scale: 1.02, boxShadow: '0 12px 28px rgba(2,132,199,0.18)', zIndex: 30 },
+      }
+    : {}
+
   return (
-    <motion.div
+    <Root
       ref={cardRef}
+      {...rootProps}
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -354,10 +378,23 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
       {/* Riga principale */}
       <div
         onClick={handleTogglePrices}
-        className={`group flex items-center gap-3 pl-2 pr-3 py-3 ${
-          productPrices.length > 0 && !checked ? 'cursor-pointer' : ''
+        className={`group flex items-center gap-3 ${reorderable ? 'pl-1' : 'pl-2'} pr-3 py-3 ${
+          canCompare && !checked ? 'cursor-pointer' : ''
         } ${!checked ? 'card-hover' : ''}`}
       >
+        {/* Maniglia drag - solo per prodotti attivi riordinabili */}
+        {reorderable && (
+          <button
+            {...longPress}
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Tieni premuto per trascinare"
+            className="flex-shrink-0 -ml-0.5 -mr-2 p-0.5 text-slate-300 hover:text-slate cursor-grab active:cursor-grabbing"
+            style={{ touchAction: 'none' }}
+          >
+            <GripVertical className="w-4 h-4" />
+          </button>
+        )}
+
         {/* Icona prodotto con checkbox overlay */}
         <div className="relative flex-shrink-0">
           <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-all ${
@@ -410,7 +447,7 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
                   : (selectedPriceInfo.effectivePrice * quantity).toFixed(2).replace('.', ',')
                 } €
                 {/* Freccia per aprire dettagli */}
-                {productPrices.length > 0 && !checked && (
+                {canCompare && !checked && (
                   <ChevronDown
                     className={`w-3.5 h-3.5 text-ocean transition-transform ${
                       showPrices ? 'rotate-180' : ''
@@ -421,7 +458,7 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
             ) : price ? (
               <span className={`inline-flex items-center gap-1 ${checked ? '' : 'text-ocean font-medium'}`}>
                 {(price * quantity).toFixed(2).replace('.', ',')} €
-                {productPrices.length > 0 && !checked && (
+                {canCompare && !checked && (
                   <ChevronDown
                     className={`w-3.5 h-3.5 text-ocean transition-transform ${
                       showPrices ? 'rotate-180' : ''
@@ -429,7 +466,7 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
                   />
                 )}
               </span>
-            ) : productPrices.length > 0 && !checked ? (
+            ) : canCompare && !checked ? (
               <span className="inline-flex items-center gap-1 text-ocean font-medium">
                 Confronta prezzi
                 <ChevronDown
@@ -443,7 +480,7 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
             {selectedSupermarket && !checked && (
               <span className="inline-flex items-center gap-1">
                 {/* Icona miglior prezzo */}
-                {productPrices.length > 0 && productPrices[0]?.supermarketId === supermarketId && (
+                {canCompare && productPrices[0]?.supermarketId === supermarketId && (
                   <Star className="w-3.5 h-3.5 text-green-500 fill-green-500" />
                 )}
                 {/* Icona offerta */}
@@ -527,7 +564,7 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
 
       {/* Sezione prezzi espandibile */}
       <AnimatePresence>
-        {showPrices && productPrices.length > 0 && (
+        {showPrices && canCompare && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -621,6 +658,6 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate }) {
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </Root>
   )
 }

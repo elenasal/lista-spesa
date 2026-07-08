@@ -9,8 +9,10 @@ const DEFAULT_FILTERS = {
   category: null,
 }
 
-// Carica filtri da localStorage
-function loadFilters(listId) {
+// Carica filtri da localStorage.
+// Se la lista non ha ancora filtri salvati e ha un supermercato associato,
+// pre-imposta il filtro supermercato (default rimovibile).
+function loadFilters(listId, defaultSupermarketId = null) {
   try {
     const saved = localStorage.getItem(getStorageKey(listId))
     if (saved) {
@@ -20,7 +22,7 @@ function loadFilters(listId) {
   } catch {
     // Ignora errori
   }
-  return { ...DEFAULT_FILTERS }
+  return { ...DEFAULT_FILTERS, supermarketId: defaultSupermarketId ?? null }
 }
 
 // Salva filtri in localStorage
@@ -32,17 +34,17 @@ function saveFilters(filters, listId) {
   }
 }
 
-export function useProductFilters(listId = null) {
-  const [filters, setFilters] = useState(() => loadFilters(listId))
+export function useProductFilters(listId = null, { defaultSupermarketId = null } = {}) {
+  const [filters, setFilters] = useState(() => loadFilters(listId, defaultSupermarketId))
   const [initializedForList, setInitializedForList] = useState(listId)
 
   // Ricarica quando cambia lista
   useEffect(() => {
     if (listId !== initializedForList) {
-      setFilters(loadFilters(listId))
+      setFilters(loadFilters(listId, defaultSupermarketId))
       setInitializedForList(listId)
     }
-  }, [listId, initializedForList])
+  }, [listId, initializedForList, defaultSupermarketId])
 
   // Salva quando cambiano i filtri
   useEffect(() => {

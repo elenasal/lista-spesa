@@ -3,18 +3,32 @@
 @tailwind utilities;
 
 /* Base styles */
+:root {
+  /* Force a light UI: prevents the browser (OS/Chrome dark mode) from
+     painting the page canvas / scrollbars dark, which showed up as the
+     dark teal bands at the left/right edges. */
+  color-scheme: light;
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
 html {
   scroll-behavior: smooth;
+  /* Paint the backdrop behind the app light, so no dark canvas can bleed
+     through at the edges. */
+  background-color: #F8FAFC;
+  /* Kill any horizontal scrollbar. `clip` does not create a scroll
+     container, so the sticky header keeps working. */
+  overflow-x: clip;
 }
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background-color: #F8FAFC;
   color: #1E293B;
+  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

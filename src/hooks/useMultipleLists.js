@@ -118,6 +118,11 @@ export function useMultipleLists() {
     setCurrentListId(id)
   }, [])
 
+  // Riordina le liste (drag & drop in home). newOrder è l'array completo riordinato.
+  const reorderLists = useCallback((newOrder) => {
+    setLists(newOrder)
+  }, [])
+
   return {
     lists,
     currentList,
@@ -128,5 +133,6 @@ export function useMultipleLists() {
     deleteList,
     switchList,
     updateListBudget,
+    reorderLists,
   }
 }
