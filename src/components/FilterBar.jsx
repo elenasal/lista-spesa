@@ -38,6 +38,7 @@ export default function FilterBar({
   clearAllFilters,
   hasActiveFilters,
   activeFilterCount,
+  lockedSupermarketId = null,
 }) {
   const { favoriteSupermarkets, hasFavorites: hasFavoriteSupermarkets } = useFavoriteSupermarkets()
   const [isExpanded, setIsExpanded] = useState(false)
@@ -73,7 +74,7 @@ export default function FilterBar({
         {/* Chip filtri attivi */}
         {hasActiveFilters && (
           <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-            {filters.supermarketId && (
+            {filters.supermarketId && !lockedSupermarketId && (
               <FilterChip
                 label={getSupermercatoName(filters.supermarketId)}
                 icon={<Store className="w-3 h-3" />}
@@ -151,8 +152,8 @@ export default function FilterBar({
               {/* Contenuto filtri */}
               <div className="flex-1 overflow-y-auto p-4 space-y-6">
 
-                {/* Sezione Supermercato */}
-                {hasFavoriteSupermarkets && (
+                {/* Sezione Supermercato (nascosta nelle liste legate a un supermercato) */}
+                {!lockedSupermarketId && hasFavoriteSupermarkets && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
                       <Store className="w-4 h-4 text-ocean" />

@@ -101,6 +101,9 @@ export default function Header({ title, subtitle, onBack, onOpenSupermarkets, ri
           )}
         </div>
 
+        {/* Aggancio avatar condivisione (stile neutro, non toccato dallo stile pulsanti) */}
+        <div id="header-avatars-portal" className="flex items-center flex-shrink-0" />
+
         {/* Azioni - stile bianco con box */}
         <div className="flex items-center gap-2 [&_button]:w-11 [&_button]:h-11 [&_button]:flex [&_button]:items-center [&_button]:justify-center [&_button]:bg-white/15 [&_button]:hover:bg-white/25 [&_button]:rounded-xl [&_button]:border [&_button]:border-white/20 [&_button]:transition-all [&_button]:text-white [&_svg]:w-6 [&_svg]:h-6 [&_svg]:text-white">
           {rightAction}

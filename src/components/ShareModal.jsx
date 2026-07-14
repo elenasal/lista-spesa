@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Share2, X, Link as LinkIcon, Copy, Check, Send } from 'lucide-react'
+import { Share2, X, Link as LinkIcon, Copy, Check, Send, Users } from 'lucide-react'
+import ShareAvatars from './ui/ShareAvatars'
 
 /**
  * Modal di condivisione lista con doppia modalità: testo e link.
@@ -11,7 +12,7 @@ import { Share2, X, Link as LinkIcon, Copy, Check, Send } from 'lucide-react'
  * - items: array (prodotti della lista)
  * - listName: string
  */
-export default function ShareModal({ isOpen, onClose, items = [], listName = 'Lista' }) {
+export default function ShareModal({ isOpen, onClose, items = [], listName = 'Lista', members = [] }) {
   const [copied, setCopied] = useState(null) // 'text' | 'link' | null
 
   const buildText = () => {
@@ -112,6 +113,20 @@ export default function ShareModal({ isOpen, onClose, items = [], listName = 'Li
 
           {/* Contenuto */}
           <div className="p-4 space-y-3 overflow-y-auto">
+            {/* Persone sulla lista (collaborazione) */}
+            <div className="p-3 bg-sky-light/30 rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="w-4 h-4 text-ocean" />
+                <p className="text-sm font-medium text-night">Persone su questa lista</p>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <ShareAvatars members={members} showAdd={false} />
+                <span className="text-xs text-slate">
+                  Invita altri con il link qui sotto
+                </span>
+              </div>
+            </div>
+
             {/* Condivisione nativa (mobile) */}
             {canNativeShare && (
               <button
@@ -151,8 +166,8 @@ export default function ShareModal({ isOpen, onClose, items = [], listName = 'Li
                 <LinkIcon className="w-4 h-4 text-ocean" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-night">Copia link</p>
-                <p className="text-xs text-slate">Chi lo apre importa la lista</p>
+                <p className="font-medium text-night">Copia link d'invito</p>
+                <p className="text-xs text-slate">Chi apre il link entra nella lista</p>
               </div>
               {copied === 'link' && (
                 <span className="flex items-center gap-1 text-sm text-emerald-600 font-medium flex-shrink-0">

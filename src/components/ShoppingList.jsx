@@ -5,8 +5,9 @@ import { useProductFilters } from '../hooks/useProductFilters'
 import { useFavoriteProducts } from '../hooks/useFavoriteProducts'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import ProductItem from './ProductItem'
-import AddProductForm from './AddProductForm'
+import AddProductSheet from './AddProductSheet'
 import ShareModal from './ShareModal'
+import ShareAvatars from './ui/ShareAvatars'
 import FilterBar from './FilterBar'
 import EmptyState from './ui/EmptyState'
 import LoadingSpinner from './ui/LoadingSpinner'
@@ -90,7 +91,7 @@ function filterShoppingItems(items, filters, context) {
   })
 }
 
-export default function ShoppingList({ listId, listName = 'Lista della Spesa', listBudget, listSupermarketId = null, onUpdateBudget }) {
+export default function ShoppingList({ listId, listName = 'Lista della Spesa', listBudget, listSupermarketId = null, listMembers = [], onUpdateBudget }) {
   const {
     items,
     loading,
@@ -104,12 +105,12 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
     stats,
   } = useShoppingList(listId)
 
-  const { filters, setFilter, clearFilter, clearAllFilters, hasActiveFilters, activeFilterCount } = useProductFilters(listId, { defaultSupermarketId: listSupermarketId })
+  const { filters, setFilter, clearFilter, clearAllFilters, hasActiveFilters, activeFilterCount } = useProductFilters(listId)
   const { favorites: favoriteProducts } = useFavoriteProducts()
   const { favorites: favoriteSupermarketIds } = useFavoriteSupermarkets()
 
   const [showChecked, setShowChecked] = useState(true)
-  const [portalContainer, setPortalContainer] = useState(null)
+  const [actionPortal, setActionPortal] = useState(null)
   const [showShare, setShowShare] = useState(false)
   const [isEditingBudget, setIsEditingBudget] = useState(false)
   const [budgetInput, setBudgetInput] = useState('')
@@ -119,23 +120,36 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
     return new Set(favoriteProducts.map(p => p.name.toLowerCase().trim()))
   }, [favoriteProducts])
 
-  // Applica filtri agli items
-  const filteredItems = useMemo(() => {
-    if (!hasActiveFilters) return items
+  // In una lista legata a un supermercato, il vincolo è SEMPRE quel supermercato:
+  // se un filtro supermercato è rimasto salvato (o è stato impostato), lo azzero
+  // perché il vincolo lo gestiamo noi in modo forzato qui sotto.
+  useEffect(() => {
+    if (listSupermarketId && filters.supermarketId) {
+      clearFilter('supermarketId')
+    }
+  }, [listSupermarketId, filters.supermarketId, clearFilter])
 
-    return filterShoppingItems(items, filters, {
+  // Applica filtri agli items. Per le liste-supermercato forziamo il filtro
+  // supermercato a quel supermercato (non aggirabile), come per la lista Coop.
+  const filteredItems = useMemo(() => {
+    const effectiveFilters = listSupermarketId
+      ? { ...filters, supermarketId: listSupermarketId }
+      : filters
+    const active = hasActiveFilters || !!listSupermarketId
+    if (!active) return items
+
+    return filterShoppingItems(items, effectiveFilters, {
       favoritesSet,
       favoriteSupermarkets: favoriteSupermarketIds,
     })
-  }, [items, filters, hasActiveFilters, favoritesSet, favoriteSupermarketIds])
+  }, [items, filters, hasActiveFilters, listSupermarketId, favoritesSet, favoriteSupermarketIds])
 
   // Calcola quanti prodotti sono nascosti
   const hiddenCount = items.length - filteredItems.length
 
-  // Trova il container per il portal nell'header
+  // Trova il container per l'icona condividi nell'header
   useEffect(() => {
-    const container = document.getElementById('header-action-portal')
-    setPortalContainer(container)
+    setActionPortal(document.getElementById('header-action-portal'))
   }, [])
 
   if (loading) {
@@ -162,16 +176,21 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
   const sortedCategories = CATEGORY_ORDER.filter(cat => uncheckedByCategory[cat]?.length > 0)
 
   return (
-    <div className="pt-10 pb-6">
-      {/* Add form */}
-      <AddProductForm onAdd={addItem} getSuggestions={getSuggestedProducts} listSupermarketId={listSupermarketId} />
+    <div className="pt-10 pb-24">
+      {/* Barra + pannello di aggiunta prodotto (ancorati in basso) */}
+      <AddProductSheet
+        onAdd={addItem}
+        onUpdate={updateItem}
+        getSuggestions={getSuggestedProducts}
+        listSupermarketId={listSupermarketId}
+      />
 
       {/* Stats bar */}
       {items.length > 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex items-center justify-between mt-6 mb-4"
+          className="flex items-start justify-between gap-3 mt-6 mb-4"
         >
           <div className="flex items-center gap-3 flex-wrap">
             <p className="text-sm text-slate">
@@ -262,6 +281,14 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
             )}
           </div>
 
+          {/* Pila avatar condivisione - allineata alla riga "N da comprare" */}
+          <button
+            onClick={() => setShowShare(true)}
+            aria-label="Persone sulla lista"
+            className="flex-shrink-0 -mt-0.5"
+          >
+            <ShareAvatars members={listMembers} showAdd={false} size="sm" />
+          </button>
         </motion.div>
       )}
 
@@ -274,6 +301,7 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
           clearAllFilters={clearAllFilters}
           hasActiveFilters={hasActiveFilters}
           activeFilterCount={activeFilterCount}
+          lockedSupermarketId={listSupermarketId}
         />
       )}
 
@@ -407,12 +435,12 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
         </div>
       )}
 
-      {/* Trigger condivisione nell'header (via portal) */}
-      {portalContainer && items.length > 0 && createPortal(
+      {/* Icona condividi nell'header (via portal) — apre la stessa ShareModal */}
+      {actionPortal && createPortal(
         <button onClick={() => setShowShare(true)} aria-label="Condividi lista" title="Condividi lista">
           <Share2 />
         </button>,
-        portalContainer
+        actionPortal
       )}
 
       {/* Modal condivisione (fuori dal portal → leggibile) */}
@@ -421,6 +449,7 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
         onClose={() => setShowShare(false)}
         items={items}
         listName={listName}
+        members={listMembers}
       />
     </div>
   )

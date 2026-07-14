@@ -2,10 +2,11 @@ import { useState } from 'react'
 import ShoppingList from './components/ShoppingList'
 import ListsOverview from './components/ListsOverview'
 import SupermarketsPage from './components/SupermarketsPage'
+import SupermarketDetailPage from './components/SupermarketDetailPage'
 import Header from './components/layout/Header'
 import NotificationsModal from './components/NotificationsModal'
 import { useMultipleLists } from './hooks/useMultipleLists'
-import { useOffers } from './hooks/useOffers'
+import { useNotifications } from './hooks/useNotifications'
 import { Bell } from 'lucide-react'
 
 // Viste disponibili
@@ -13,6 +14,7 @@ const VIEWS = {
   HOME: 'home',
   LIST: 'list',
   SUPERMARKETS: 'supermarkets',
+  SUPERMARKET_DETAIL: 'supermarket-detail',
 }
 
 function App() {
@@ -32,9 +34,11 @@ function App() {
   // Vista corrente e ID lista selezionata
   const [currentView, setCurrentView] = useState(VIEWS.HOME)
   const [selectedListId, setSelectedListId] = useState(null)
+  // Supermercato selezionato per la pagina di dettaglio
+  const [selectedSupermarket, setSelectedSupermarket] = useState(null)
 
-  // Notifiche offerte (mockup)
-  const { offers, unreadCount, markRead, markAllRead } = useOffers()
+  // Notifiche (mockup): feed unico offerte + attività liste condivise
+  const { items: notifications, unreadCount, markRead, markAllRead } = useNotifications()
   const [showNotifications, setShowNotifications] = useState(false)
 
   const handleSelectList = (listId) => {
@@ -44,8 +48,19 @@ function App() {
   }
 
   const handleBack = () => {
+    // Dal dettaglio supermercato si torna alla lista supermercati
+    if (currentView === VIEWS.SUPERMARKET_DETAIL) {
+      setSelectedSupermarket(null)
+      setCurrentView(VIEWS.SUPERMARKETS)
+      return
+    }
     setSelectedListId(null)
     setCurrentView(VIEWS.HOME)
+  }
+
+  const handleOpenSupermarketDetail = (supermarket) => {
+    setSelectedSupermarket(supermarket)
+    setCurrentView(VIEWS.SUPERMARKET_DETAIL)
   }
 
   const handleCreateList = (name, supermarketId = null, budget = null) => {
@@ -84,6 +99,12 @@ function App() {
           subtitle: 'Confronta i prezzi',
           showBack: true,
         }
+      case VIEWS.SUPERMARKET_DETAIL:
+        return {
+          title: selectedSupermarket?.name || 'Supermercato',
+          subtitle: selectedSupermarket?.address || null,
+          showBack: true,
+        }
       default:
         return {
           title: 'Dai sfogo alle tue liste',
@@ -118,11 +139,15 @@ function App() {
             listName={selectedList?.name}
             listBudget={selectedList?.budget}
             listSupermarketId={selectedList?.supermarketId}
+            listMembers={selectedList?.members}
             onUpdateBudget={(budget) => updateListBudget(selectedListId, budget)}
           />
         )}
         {currentView === VIEWS.SUPERMARKETS && (
-          <SupermarketsPage />
+          <SupermarketsPage onOpenDetail={handleOpenSupermarketDetail} />
+        )}
+        {currentView === VIEWS.SUPERMARKET_DETAIL && (
+          <SupermarketDetailPage supermarket={selectedSupermarket} />
         )}
         {currentView === VIEWS.HOME && (
           <ListsOverview
@@ -145,7 +170,9 @@ function App() {
         <button
           onClick={() => setShowNotifications(true)}
           aria-label="Notifiche offerte"
-          className="fixed bottom-6 right-4 z-40 w-14 h-14 rounded-2xl bg-ocean text-white shadow-soft-lg flex items-center justify-center hover:bg-deep active:scale-95 transition-all"
+          className={`fixed right-4 z-40 w-14 h-14 rounded-2xl bg-ocean text-white shadow-soft-lg flex items-center justify-center hover:bg-deep active:scale-95 transition-all ${
+            currentView === VIEWS.LIST ? 'bottom-24' : 'bottom-6'
+          }`}
         >
           <Bell className="w-6 h-6" />
           {unreadCount > 0 && (
@@ -159,7 +186,7 @@ function App() {
       <NotificationsModal
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
-        offers={offers}
+        items={notifications}
         onMarkRead={markRead}
         onMarkAllRead={markAllRead}
       />

@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, Store, Check, MapPin, Search, X, Locate, ScanBarcode, Gift } from 'lucide-react'
+import { Heart, Store, Check, MapPin, Search, X, Locate, ScanBarcode, Gift, ChevronRight } from 'lucide-react'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useLoyaltyCards } from '../hooks/useLoyaltyCards'
-import { formatDistance } from '../data/supermarkets'
+import { formatDistance, getOpenStatus } from '../data/supermarkets'
 import LoyaltyCardModal from './LoyaltyCardModal'
 import CardDisplayModal from './CardDisplayModal'
 
-export default function SupermarketsPage() {
+export default function SupermarketsPage({ onOpenDetail }) {
   const { supermarketsWithFavorites, toggleFavorite, hasFavorites } = useFavoriteSupermarkets()
   const { getCard, saveCard, removeCard, hasCard } = useLoyaltyCards()
   const [searchValue, setSearchValue] = useState('Novara, Italia')
@@ -72,7 +72,9 @@ export default function SupermarketsPage() {
       {/* Lista supermercati */}
       <div className="space-y-3">
         <AnimatePresence mode="popLayout">
-          {supermarketsWithFavorites.map((supermarket) => (
+          {supermarketsWithFavorites.map((supermarket) => {
+            const status = getOpenStatus(supermarket)
+            return (
             <motion.div
               key={supermarket.id}
               layout
@@ -119,6 +121,25 @@ export default function SupermarketsPage() {
                       {supermarket.address}, {supermarket.city}
                     </p>
                   </div>
+
+                  {/* Riga stato apertura - tocca per il dettaglio */}
+                  {status && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onOpenDetail?.(supermarket)
+                      }}
+                      className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-left hover:opacity-80 transition-opacity"
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                      <span className={`font-semibold ${status.isOpen ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {status.isOpen ? 'APERTO' : 'CHIUSO'}
+                      </span>
+                      <span className="text-slate">· {status.detail}</span>
+                      <ChevronRight className="w-4 h-4 text-slate-light flex-shrink-0" />
+                    </button>
+                  )}
+
                   {supermarket.isFavorite && (
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-xs text-ocean">Selezionato</p>
@@ -175,7 +196,8 @@ export default function SupermarketsPage() {
                 </div>
               </div>
             </motion.div>
-          ))}
+            )
+          })}
         </AnimatePresence>
       </div>
 

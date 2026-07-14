@@ -1,17 +1,29 @@
 import { useState, useEffect, useCallback } from 'react'
+import { MOCK_USERS } from '../data/users'
 
 const LISTS_KEY = 'lista-spesa-lists'
 const CURRENT_LIST_KEY = 'lista-spesa-current'
+const MEMBERS_RESET_KEY = 'lista-spesa-members-reset-v1'
 
-// Liste di default per mockup
+// Liste di default per mockup (la prima è condivisa con 2 utenti come esempio)
 const DEFAULT_LISTS = [
-  { id: 'default', name: 'Spesa settimanale', createdAt: new Date().toISOString() },
+  { id: 'default', name: 'Spesa settimanale', createdAt: new Date().toISOString(), members: ['u-giulia', 'u-marco'] },
 ]
 
 function loadLists() {
   try {
     const saved = localStorage.getItem(LISTS_KEY)
-    return saved ? JSON.parse(saved) : DEFAULT_LISTS
+    let lists = saved ? JSON.parse(saved) : DEFAULT_LISTS
+
+    // Migrazione una-tantum: pulisce i membri accumulati e lascia 2 utenti come
+    // esempio solo sulla prima lista (liste e prodotti restano intatti).
+    if (!localStorage.getItem(MEMBERS_RESET_KEY)) {
+      lists = lists.map((l, i) => ({ ...l, members: i === 0 ? ['u-giulia', 'u-marco'] : [] }))
+      localStorage.setItem(MEMBERS_RESET_KEY, '1')
+      localStorage.setItem(LISTS_KEY, JSON.stringify(lists))
+    }
+
+    return lists
   } catch {
     return DEFAULT_LISTS
   }
@@ -70,6 +82,7 @@ export function useMultipleLists() {
       name: name.trim(),
       supermarketId,
       budget: budget ? parseFloat(budget) : null,
+      members: [],
       createdAt: new Date().toISOString()
     }
     setLists(prev => [...prev, newList])
@@ -123,6 +136,17 @@ export function useMultipleLists() {
     setLists(newOrder)
   }, [])
 
+  // Aggiunge alla lista il prossimo utente finto non ancora presente (mockup condivisione)
+  const addMemberToList = useCallback((id) => {
+    setLists(prev => prev.map(list => {
+      if (list.id !== id) return list
+      const members = list.members || []
+      const next = MOCK_USERS.find(u => !members.includes(u.id))
+      if (!next) return list
+      return { ...list, members: [...members, next.id] }
+    }))
+  }, [])
+
   return {
     lists,
     currentList,
@@ -134,5 +158,6 @@ export function useMultipleLists() {
     switchList,
     updateListBudget,
     reorderLists,
+    addMemberToList,
   }
 }

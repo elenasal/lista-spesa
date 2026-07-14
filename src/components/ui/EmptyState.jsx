@@ -15,7 +15,7 @@ export default function EmptyState() {
         Lista vuota
       </h3>
       <p className="text-slate text-sm max-w-[200px]">
-        Aggiungi il tuo primo prodotto usando il campo qui sopra
+        Aggiungi il tuo primo prodotto usando la barra qui sotto
       </p>
     </motion.div>
   )

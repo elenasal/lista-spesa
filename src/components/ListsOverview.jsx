@@ -4,7 +4,8 @@ import { useLongPressDrag } from '../hooks/useLongPressDrag'
 import { ShoppingCart, Plus, Trash2, Store, Settings, Wallet, ScanBarcode, Share2, Gift, ListPlus, Pencil, X, GripVertical } from 'lucide-react'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useLoyaltyCards } from '../hooks/useLoyaltyCards'
-import { getSupermarketById } from '../data/supermarkets'
+import { getSupermarketById, getOpenStatus } from '../data/supermarkets'
+import ShareAvatars from './ui/ShareAvatars'
 import CardDisplayModal from './CardDisplayModal'
 import LoyaltyCardModal from './LoyaltyCardModal'
 import EditListModal from './EditListModal'
@@ -51,7 +52,7 @@ function ListCard({ list, canDelete, canReorder, onSelect, onEdit, onShare, onDe
     listActions.push({
       icon: <Share2 className="w-4 h-4" />,
       label: 'Condividi',
-      onClick: () => onShare({ name: list.name, items: stats.items }),
+      onClick: () => onShare({ name: list.name, items: stats.items, members: list.members || [] }),
     })
   }
   if (canDelete) {
@@ -157,6 +158,13 @@ function ListCard({ list, canDelete, canReorder, onSelect, onEdit, onShare, onDe
               )}
             </div>
           )}
+
+          {/* Condivisione (mockup): io + membri + "+" per condividere */}
+          <ShareAvatars
+            members={list.members}
+            onAdd={() => onShare({ name: list.name, items: stats.items, members: list.members || [] })}
+            className="mt-2"
+          />
         </div>
 
         {/* Menu azioni */}
@@ -240,7 +248,7 @@ export default function ListsOverview({
       {/* Sezione Liste */}
       <div className="flex items-center gap-2 mb-5 ml-4">
         <ShoppingCart className="w-5 h-5 text-ocean" />
-        <h2 className="text-lg font-semibold text-night">Le tue liste</h2>
+        <h2 className="text-lg font-semibold text-night">Le mie liste</h2>
       </div>
 
       <div className="space-y-3">
@@ -349,7 +357,7 @@ export default function ListsOverview({
       <div className="flex items-center justify-between mt-10 mb-5 mx-4">
         <div className="flex items-center gap-2">
           <Store className="w-5 h-5 text-ocean" />
-          <h2 className="text-lg font-semibold text-night">I tuoi supermercati</h2>
+          <h2 className="text-lg font-semibold text-night">I miei supermercati</h2>
         </div>
         <button
           onClick={onNavigateToSupermarkets}
@@ -368,6 +376,7 @@ export default function ListsOverview({
 
             const card = getCard(supermarket.id)
             const hasCardSaved = hasCard(supermarket.id)
+            const status = getOpenStatus(supermarket)
 
             const supermarketActions = [
               {
@@ -410,6 +419,16 @@ export default function ListsOverview({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-night">{supermarket.name}</p>
+                    {/* Orario - sempre visibile */}
+                    {status && (
+                      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs mt-0.5">
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                        <span className={`font-semibold ${status.isOpen ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {status.isOpen ? 'APERTO' : 'CHIUSO'}
+                        </span>
+                        <span className="text-slate">· {status.detail}</span>
+                      </p>
+                    )}
                     {hasCardSaved ? (
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
@@ -460,6 +479,7 @@ export default function ListsOverview({
         onClose={() => setSharingList(null)}
         items={sharingList?.items || []}
         listName={sharingList?.name || 'Lista'}
+        members={sharingList?.members || []}
       />
 
       <CardDisplayModal
