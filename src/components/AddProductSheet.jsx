@@ -485,7 +485,7 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
                   <div className="flex-1 min-w-0 flex items-center gap-2 bg-white border border-cloud rounded-xl px-3 h-11 focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-all">
                     <input
                       ref={inputRef}
-                      type="text"
+                      type="search"
                       name="ricerca-prodotto"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
@@ -499,7 +499,7 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
                       data-lpignore="true"
                       data-form-type="other"
                       data-1p-ignore
-                      className="flex-1 min-w-0 text-night placeholder:text-slate-light bg-transparent focus:outline-none"
+                      className="flex-1 min-w-0 text-night placeholder:text-slate-light bg-transparent focus:outline-none [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
                     />
                     {query && (
                       <button onClick={() => setQuery('')} className="flex-shrink-0 text-slate hover:text-night">
