@@ -231,8 +231,8 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
   return (
     <>
       {/* Barra fissa in basso (chiusa) */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none">
-        <div className="max-w-lg mx-auto px-3 pb-3 pointer-events-auto">
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#c8eeff] shadow-[0_-2px_12px_rgba(14,165,233,0.10)]">
+        <div className="max-w-lg mx-auto px-3 py-3">
           <button
             onClick={openSheet}
             className="w-full flex items-center gap-3 pl-4 pr-2 py-2.5 bg-white rounded-2xl shadow-soft-lg border border-cloud"
