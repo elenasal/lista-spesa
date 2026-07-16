@@ -6,6 +6,7 @@ import { useFavoriteProducts } from '../hooks/useFavoriteProducts'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import ProductItem from './ProductItem'
 import AddProductSheet from './AddProductSheet'
+import FavoriteProductsBar from './FavoriteProductsBar'
 import ShareModal from './ShareModal'
 import ShareAvatars from './ui/ShareAvatars'
 import FilterBar from './FilterBar'
@@ -184,6 +185,9 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
         getSuggestions={getSuggestedProducts}
         listSupermarketId={listSupermarketId}
       />
+
+      {/* Riga prodotti preferiti (quick-add) in cima */}
+      <FavoriteProductsBar onAdd={addItem} listSupermarketId={listSupermarketId} />
 
       {/* Stats bar */}
       {items.length > 0 && (
