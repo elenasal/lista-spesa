@@ -122,6 +122,14 @@ body {
   display: none;  /* Chrome, Safari, Opera */
 }
 
+/* Campo editabile (contenteditable) usato al posto di <input> per evitare la
+   barra di autofill della tastiera Android. Placeholder via ::before. */
+.ce-input:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8; /* slate-light */
+  pointer-events: none;
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

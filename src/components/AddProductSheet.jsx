@@ -101,6 +101,15 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
     return () => { document.body.style.overflow = prev }
   }, [open])
 
+  // Il campo è un contenteditable (evita la barra di autofill della tastiera):
+  // quando la query viene azzerata via stato, svuotiamo anche il DOM.
+  useEffect(() => {
+    const el = inputRef.current
+    if (el && query === '' && el.textContent !== '') {
+      el.textContent = ''
+    }
+  }, [query])
+
   const openSheet = () => {
     setOpen(true)
     setQuery('')
@@ -109,7 +118,14 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
     setTimeout(() => inputRef.current?.focus(), 120)
   }
 
+  // Chiude la tastiera togliendo il focus dal campo editabile
+  const dismissKeyboard = () => {
+    inputRef.current?.blur()
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+  }
+
   const closeSheet = () => {
+    dismissKeyboard()
     setOpen(false)
     setQuery('')
     setLastItem(null)
@@ -265,7 +281,7 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
               >
                 {/* Maniglia — sempre visibile in alto, unica zona che chiude col trascinamento */}
                 <div
-                  onPointerDown={(e) => dragControls.start(e)}
+                  onPointerDown={(e) => { dismissKeyboard(); dragControls.start(e) }}
                   className="flex-shrink-0 pt-3 pb-2 flex justify-center cursor-grab active:cursor-grabbing touch-none"
                 >
                   <div className="w-11 h-1.5 rounded-full bg-cloud" />
@@ -483,26 +499,30 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
                     <ScanLine className="w-5 h-5" />
                   </button>
                   <div className="flex-1 min-w-0 flex items-center gap-2 bg-white border border-cloud rounded-xl px-3 h-11 focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-all">
-                    <input
+                    {/* Campo editabile (non è un <input>): la barra autofill della
+                        tastiera Android non lo aggancia. */}
+                    <div
                       ref={inputRef}
-                      type="search"
-                      name="ricerca-prodotto"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      onKeyDown={handleInputKeyDown}
-                      placeholder={showDetails ? 'Articolo successivo...' : 'Mi serve...'}
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck={false}
+                      role="textbox"
+                      contentEditable
+                      suppressContentEditableWarning
+                      inputMode="text"
                       enterKeyHint="done"
-                      data-lpignore="true"
-                      data-form-type="other"
-                      data-1p-ignore
-                      className="flex-1 min-w-0 text-night placeholder:text-slate-light bg-transparent focus:outline-none [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
+                      spellCheck={false}
+                      data-placeholder={showDetails ? 'Articolo successivo...' : 'Mi serve...'}
+                      onInput={(e) => {
+                        const text = e.currentTarget.textContent || ''
+                        if (text === '') e.currentTarget.innerHTML = ''
+                        setQuery(text)
+                      }}
+                      onKeyDown={handleInputKeyDown}
+                      className="ce-input flex-1 min-w-0 text-night bg-transparent focus:outline-none whitespace-nowrap overflow-x-auto scrollbar-hide cursor-text leading-tight"
                     />
                     {query && (
-                      <button onClick={() => setQuery('')} className="flex-shrink-0 text-slate hover:text-night">
+                      <button
+                        onClick={() => { setQuery(''); inputRef.current?.focus() }}
+                        className="flex-shrink-0 text-slate hover:text-night"
+                      >
                         <X className="w-4 h-4" />
                       </button>
                     )}
