@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useDragControls } from 'framer-motion'
 import { Plus, X, ScanLine, Tag, Star, Check, Minus, ChevronDown } from 'lucide-react'
 import CategoryIcon from './ui/CategoryIcon'
 import BarcodeScanner from './BarcodeScanner'
@@ -26,6 +26,7 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
   const [lastDbProduct, setLastDbProduct] = useState(null)
 
   const inputRef = useRef(null)
+  const dragControls = useDragControls()
 
   const { favorites: favoriteSupermarketIds } = useFavoriteSupermarkets()
   const { favorites: favoriteProducts } = useFavoriteProducts()
@@ -252,16 +253,21 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
                 drag="y"
+                dragControls={dragControls}
+                dragListener={false}
                 dragConstraints={{ top: 0, bottom: 0 }}
                 dragElastic={{ top: 0, bottom: 0.4 }}
                 onDragEnd={(_, info) => {
-                  if (info.offset.y > 120 || info.velocity.y > 600) closeSheet()
+                  if (info.offset.y > 100 || info.velocity.y > 500) closeSheet()
                 }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-lg mx-auto bg-white rounded-t-3xl shadow-soft-lg flex flex-col max-h-[88vh]"
+                className="w-full max-w-lg mx-auto bg-white rounded-t-3xl shadow-soft-lg flex flex-col h-[calc(100dvh-2.5rem)]"
               >
-                {/* Maniglia */}
-                <div className="flex-shrink-0 pt-2.5 pb-1 flex justify-center cursor-grab active:cursor-grabbing">
+                {/* Maniglia — sempre visibile in alto, unica zona che chiude col trascinamento */}
+                <div
+                  onPointerDown={(e) => dragControls.start(e)}
+                  className="flex-shrink-0 pt-3 pb-2 flex justify-center cursor-grab active:cursor-grabbing touch-none"
+                >
                   <div className="w-11 h-1.5 rounded-full bg-cloud" />
                 </div>
 
@@ -343,9 +349,14 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
                             <input
                               type="text"
                               inputMode="decimal"
+                              name="prezzo-prodotto"
                               value={priceInputValue}
                               onChange={(e) => setPriceValue(e.target.value.replace(/[^0-9,.]/g, ''))}
                               placeholder="0,00"
+                              autoComplete="off"
+                              data-lpignore="true"
+                              data-form-type="other"
+                              data-1p-ignore
                               className="w-16 text-sm text-night bg-transparent focus:outline-none"
                             />
                           </div>
@@ -475,10 +486,19 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
                     <input
                       ref={inputRef}
                       type="text"
+                      name="ricerca-prodotto"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       onKeyDown={handleInputKeyDown}
                       placeholder={showDetails ? 'Articolo successivo...' : 'Mi serve...'}
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
+                      enterKeyHint="done"
+                      data-lpignore="true"
+                      data-form-type="other"
+                      data-1p-ignore
                       className="flex-1 min-w-0 text-night placeholder:text-slate-light bg-transparent focus:outline-none"
                     />
                     {query && (
