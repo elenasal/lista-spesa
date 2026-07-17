@@ -431,7 +431,7 @@ export default function ListsOverview({
                     />
                     <p className="font-semibold text-night truncate">{supermarket.name}</p>
                     {status && (
-                      <span className="flex items-center gap-1.5 text-xs">
+                      <span className="flex items-center gap-1.5 text-xs ml-auto flex-shrink-0">
                         <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                         <span className={`font-semibold ${status.isOpen ? 'text-emerald-600' : 'text-rose-600'}`}>
                           {status.isOpen ? 'APERTO' : 'CHIUSO'}
