@@ -421,14 +421,14 @@ export default function ListsOverview({
               >
                 <div
                   onClick={handleSupermarketTap}
-                  className="p-4 bg-white rounded-xl shadow-soft cursor-pointer hover:shadow-md transition-all"
+                  className="p-3 bg-white rounded-xl shadow-soft cursor-pointer hover:shadow-md transition-all"
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                      className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
                       style={{ backgroundColor: supermarket.color }}
                     >
-                      <Store className="w-6 h-6 text-white" />
+                      <Store className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-night">{supermarket.name}</p>
