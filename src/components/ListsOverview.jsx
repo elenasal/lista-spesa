@@ -421,70 +421,68 @@ export default function ListsOverview({
               >
                 <div
                   onClick={handleSupermarketTap}
-                  className="flex items-stretch gap-3 p-3 bg-white rounded-xl shadow-soft cursor-pointer hover:shadow-md transition-all"
+                  className="p-3 bg-white rounded-xl shadow-soft cursor-pointer hover:shadow-md transition-all"
                 >
-                  {/* Colonna sinistra: mini header + barcode */}
-                  <div className="flex-1 min-w-0">
-                    {/* Mini header: nome + stato sulla stessa riga */}
-                    <div className="flex items-center gap-x-2 gap-y-0.5 flex-wrap">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: supermarket.color }}
-                      />
-                      <p className="font-semibold text-night truncate">{supermarket.name}</p>
-                      {status && (
-                        <span className="flex items-center gap-1.5 text-xs">
-                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                          <span className={`font-semibold ${status.isOpen ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            {status.isOpen ? 'APERTO' : 'CHIUSO'}
-                          </span>
-                          <span className="text-slate">· {status.detail}</span>
+                  {/* Mini header a tutta larghezza: nome + stato sulla stessa riga */}
+                  <div className="flex items-center gap-x-2 gap-y-0.5 flex-wrap">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: supermarket.color }}
+                    />
+                    <p className="font-semibold text-night truncate">{supermarket.name}</p>
+                    {status && (
+                      <span className="flex items-center gap-1.5 text-xs">
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                        <span className={`font-semibold ${status.isOpen ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {status.isOpen ? 'APERTO' : 'CHIUSO'}
                         </span>
-                      )}
-                    </div>
-                    {!hasCardSaved && (
-                      <p className="text-xs text-slate mt-1 pl-[18px]">
-                        Tocca per aggiungere tessera
-                      </p>
-                    )}
-
-                    {/* Barcode carta fedeltà visibile subito (senza aprire il dettaglio) */}
-                    {hasCardSaved && (
-                      <div className="mt-2 pt-2 border-t border-cloud">
-                        <div className="flex items-center gap-2 mb-1">
-                          <ScanBarcode className="w-3 h-3 text-slate" />
-                          <span className="text-[10px] font-semibold text-slate uppercase tracking-wider">
-                            {card.cardName || 'Tessera'}
-                          </span>
-                          {card.hasLoyaltyProgram && card.points && (
-                            <span className="flex items-center gap-1 text-[10px] text-amber-600">
-                              <Gift className="w-2.5 h-2.5" />
-                              {card.points.toLocaleString('it-IT')} pt
-                            </span>
-                          )}
-                        </div>
-                        <Barcode number={card.cardNumber} height={36} className="!justify-start max-w-full overflow-hidden" />
-                        <p className="mt-1 font-mono text-xs tracking-widest text-slate">
-                          {formatCardNumber(card.cardNumber)}
-                        </p>
-                      </div>
+                        <span className="text-slate">· {status.detail}</span>
+                      </span>
                     )}
                   </div>
 
-                  {/* Colonna destra: bottoni separati da divisoria verticale */}
-                  <div
-                    className="flex flex-col items-center justify-center gap-1 pl-3 border-l border-cloud flex-shrink-0"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      onClick={handleDirections}
-                      aria-label={`Indicazioni per ${supermarket.name}`}
-                      title="Indicazioni stradali"
-                      className="w-9 h-9 flex items-center justify-center text-ocean hover:bg-sky-light/40 rounded-lg transition-colors"
+                  {/* Riga inferiore: barcode (o CTA) a sinistra, azioni a destra */}
+                  <div className="flex items-stretch gap-3 mt-2 pt-2 border-t border-cloud">
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      {hasCardSaved ? (
+                        <>
+                          <div className="flex items-center gap-2 mb-1">
+                            <ScanBarcode className="w-3 h-3 text-slate" />
+                            <span className="text-[10px] font-semibold text-slate uppercase tracking-wider">
+                              {card.cardName || 'Tessera'}
+                            </span>
+                            {card.hasLoyaltyProgram && card.points && (
+                              <span className="flex items-center gap-1 text-[10px] text-amber-600">
+                                <Gift className="w-2.5 h-2.5" />
+                                {card.points.toLocaleString('it-IT')} pt
+                              </span>
+                            )}
+                          </div>
+                          <Barcode number={card.cardNumber} height={36} className="!justify-start max-w-full overflow-hidden" />
+                          <p className="mt-1 font-mono text-xs tracking-widest text-slate">
+                            {formatCardNumber(card.cardNumber)}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-xs text-slate">Tocca per aggiungere tessera</p>
+                      )}
+                    </div>
+
+                    {/* Azioni a destra separate da divisoria verticale */}
+                    <div
+                      className="flex flex-col items-center justify-center gap-1 pl-3 border-l border-cloud flex-shrink-0"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <Navigation className="w-4 h-4" />
-                    </button>
-                    <DropdownMenu actions={supermarketActions} />
+                      <button
+                        onClick={handleDirections}
+                        aria-label={`Indicazioni per ${supermarket.name}`}
+                        title="Indicazioni stradali"
+                        className="w-9 h-9 flex items-center justify-center text-ocean hover:bg-sky-light/40 rounded-lg transition-colors"
+                      >
+                        <Navigation className="w-4 h-4" />
+                      </button>
+                      <DropdownMenu actions={supermarketActions} />
+                    </div>
                   </div>
                 </div>
               </motion.div>
