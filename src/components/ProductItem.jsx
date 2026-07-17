@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
-import { Check, Trash2, Pencil, X, ChevronDown, Tag, Star, Euro, Heart, MoreVertical, Store, GripVertical } from 'lucide-react'
+import { Check, Trash2, Pencil, X, ChevronDown, Tag, Star, Euro, Heart, MoreVertical, Store, GripVertical, ArrowLeftRight } from 'lucide-react'
 import { useLongPressDrag } from '../hooks/useLongPressDrag'
 import CategoryIcon from './ui/CategoryIcon'
 import { searchProducts, getPricesForFavorites } from '../data/productsDatabase'
@@ -433,47 +433,23 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate, reorde
           }`}>
             {name}
           </p>
-          <div className="flex items-center gap-2 text-sm text-slate mt-0.5">
+          <div className="flex items-center gap-2 text-sm text-slate mt-0.5 flex-wrap">
             {(quantity > 1 || unit !== 'pz') && (
               <span>
                 {unit === 'pz' || unit === 'conf' ? quantity : quantity.toFixed(1).replace('.0', '')} {unit}
               </span>
             )}
-            {/* Mostra prezzo del supermercato selezionato o prezzo generico */}
+            {/* Prezzo del supermercato selezionato o prezzo generico */}
             {selectedPriceInfo ? (
-              <span className={`inline-flex items-center gap-1 ${checked ? '' : 'text-ocean font-medium'}`}>
+              <span className={checked ? '' : 'text-ocean font-medium'}>
                 {selectedPriceInfo.onSale
                   ? (selectedPriceInfo.salePrice * quantity).toFixed(2).replace('.', ',')
                   : (selectedPriceInfo.effectivePrice * quantity).toFixed(2).replace('.', ',')
                 } €
-                {/* Freccia per aprire dettagli */}
-                {canCompare && !checked && (
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 text-ocean transition-transform ${
-                      showPrices ? 'rotate-180' : ''
-                    }`}
-                  />
-                )}
               </span>
             ) : price ? (
-              <span className={`inline-flex items-center gap-1 ${checked ? '' : 'text-ocean font-medium'}`}>
+              <span className={checked ? '' : 'text-ocean font-medium'}>
                 {(price * quantity).toFixed(2).replace('.', ',')} €
-                {canCompare && !checked && (
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 text-ocean transition-transform ${
-                      showPrices ? 'rotate-180' : ''
-                    }`}
-                  />
-                )}
-              </span>
-            ) : canCompare && !checked ? (
-              <span className="inline-flex items-center gap-1 text-ocean font-medium">
-                Confronta prezzi
-                <ChevronDown
-                  className={`w-3.5 h-3.5 transition-transform ${
-                    showPrices ? 'rotate-180' : ''
-                  }`}
-                />
               </span>
             ) : null}
             {/* Icone e badge supermercato selezionato */}
@@ -495,6 +471,24 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate, reorde
                   {selectedSupermarket.name}
                 </span>
               </span>
+            )}
+            {/* Pulsante confronto prezzi - evidente e con area di tocco ampia */}
+            {canCompare && !checked && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowPrices(!showPrices)
+                }}
+                aria-label="Confronta prezzi negli altri supermercati"
+                title="Confronta prezzi negli altri supermercati"
+                className="inline-flex items-center gap-1 pl-2 pr-1.5 py-1 rounded-full bg-sky-light/60 text-ocean text-xs font-semibold hover:bg-sky-light active:scale-95 transition-all"
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5" />
+                Confronta prezzi
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform ${showPrices ? 'rotate-180' : ''}`}
+                />
+              </button>
             )}
           </div>
         </div>

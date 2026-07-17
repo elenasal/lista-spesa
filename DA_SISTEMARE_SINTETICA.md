@@ -3,9 +3,9 @@
 Effort: 🟢 piccolo · 🟡 medio · 🔴 grande. (Dettagli completi in `DA_SISTEMARE.md`)
 
 ## UI (quick win)
-1. 🟢 **Barcode carta fedeltà** già visibile nella card in "I miei supermercati" (senza aprire il dettaglio).
-2. 🟢 **Indicazioni stradali** con accesso rapido dalla riga supermercato in home.
-3. 🟢 **Freccina confronto prezzi** più visibile su ogni prodotto nel dettaglio lista.
+1. ✅ ~~**Barcode carta fedeltà** già visibile nella card in "I miei supermercati"~~ — fatto 2026-07-17.
+2. ✅ ~~**Indicazioni stradali** con accesso rapido dalla riga supermercato in home~~ — fatto 2026-07-17.
+3. ✅ ~~**Freccina confronto prezzi** più visibile su ogni prodotto~~ — fatto 2026-07-17.
 4. 🟡 **Tasto indicazioni per lista**: apre il percorso verso i supermercati di quella spesa.
 
 ## Nuove funzionalità

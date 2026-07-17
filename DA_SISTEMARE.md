@@ -122,3 +122,10 @@ ma ottimizzato per **disponibilità + distanza** invece che per prezzo. Trattare
 
 ## Fatto
 <!-- Le voci completate finiscono qui, con la data -->
+
+### 2026-07-17
+- **Restyle aggiunta prodotto (bottom sheet)** — barra fissa in basso + pannello trascinabile (maniglia, chiusura a trascinamento), tile prodotto filtrate live, step dettagli con "articolo successivo", campo contenteditable (no barra autofill Android), footer azzurrino.
+- **1. Barcode carta fedeltà visibile subito** 🟢 — barcode + numero inline nella card "I miei supermercati" (componente riutilizzabile `ui/Barcode`).
+- **2. Indicazioni stradali dalla home** 🟢 — pulsante indicazioni sulla riga supermercato che apre Google Maps.
+- **3. Freccina confronto prezzi più visibile** 🟢 — sostituita da un pulsante-pillola "⇄ Confronta prezzi ⌄" evidente su ogni prodotto.
+- **Ridisegno card home** — card supermercato (header nome+stato, barcode centrato, colonna azioni con divisoria) e card lista (niente icona, pallino colore + chip supermercato/Generica).
