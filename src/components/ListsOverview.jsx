@@ -423,18 +423,18 @@ export default function ListsOverview({
                   onClick={handleSupermarketTap}
                   className="p-3 bg-white rounded-xl shadow-soft cursor-pointer hover:shadow-md transition-all"
                 >
-                  {/* Mini header a tutta larghezza: nome + stato sulla stessa riga */}
-                  <div className="flex items-center gap-x-2 gap-y-0.5 flex-wrap">
+                  {/* Mini header a tutta larghezza: nome (troncato) + stato, una riga */}
+                  <div className="flex items-center gap-x-2">
                     <span
                       className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                       style={{ backgroundColor: supermarket.color }}
                     />
-                    <p className="font-semibold text-night truncate">{supermarket.name}</p>
+                    <p className="font-semibold text-night truncate flex-1 min-w-0">{supermarket.name}</p>
                     {status && (
-                      <span className="flex items-center gap-1.5 text-xs ml-auto flex-shrink-0">
-                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                      <span className="flex items-center gap-1.5 text-xs italic flex-shrink-0">
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 not-italic ${status.isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                         <span className={`font-semibold ${status.isOpen ? 'text-emerald-600' : 'text-rose-600'}`}>
-                          {status.isOpen ? 'APERTO' : 'CHIUSO'}
+                          {status.isOpen ? 'Aperto' : 'Chiuso'}
                         </span>
                         <span className="text-slate">· {status.detail}</span>
                       </span>
@@ -443,10 +443,10 @@ export default function ListsOverview({
 
                   {/* Riga inferiore: barcode (o CTA) a sinistra, azioni a destra */}
                   <div className="flex items-stretch gap-3 mt-2 pt-2 border-t border-cloud">
-                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <div className="flex-1 min-w-0 flex flex-col items-center justify-center text-center bg-snow rounded-lg px-3 py-2">
                       {hasCardSaved ? (
                         <>
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center justify-center gap-2 mb-1">
                             <ScanBarcode className="w-3 h-3 text-slate" />
                             <span className="text-[10px] font-semibold text-slate uppercase tracking-wider">
                               {card.cardName || 'Tessera'}
@@ -458,13 +458,16 @@ export default function ListsOverview({
                               </span>
                             )}
                           </div>
-                          <Barcode number={card.cardNumber} height={36} className="!justify-start max-w-full overflow-hidden" />
+                          <Barcode number={card.cardNumber} height={36} className="max-w-full overflow-hidden" />
                           <p className="mt-1 font-mono text-xs tracking-widest text-slate">
                             {formatCardNumber(card.cardNumber)}
                           </p>
                         </>
                       ) : (
-                        <p className="text-xs text-slate">Tocca per aggiungere tessera</p>
+                        <div className="flex items-center justify-center gap-2 text-slate">
+                          <Plus className="w-7 h-7 text-sky flex-shrink-0" strokeWidth={2.5} />
+                          <span className="text-sm">Tocca per aggiungere tessera</span>
+                        </div>
                       )}
                     </div>
 
