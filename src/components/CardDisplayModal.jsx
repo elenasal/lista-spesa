@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Gift, Calendar, AlertCircle, Pencil } from 'lucide-react'
 import { format, isPast, differenceInDays } from 'date-fns'
 import { it } from 'date-fns/locale'
+import Barcode, { formatCardNumber } from './ui/Barcode'
 
 export default function CardDisplayModal({
   isOpen,
@@ -65,17 +66,9 @@ export default function CardDisplayModal({
               </p>
             </div>
 
-            {/* Barcode placeholder - simulato con linee */}
-            <div className="mt-4 flex justify-center">
-              <div className="flex items-end gap-0.5 h-16">
-                {generateBarcodeLines(cardData.cardNumber).map((width, i) => (
-                  <div
-                    key={i}
-                    className="bg-night"
-                    style={{ width: `${width}px`, height: '100%' }}
-                  />
-                ))}
-              </div>
+            {/* Barcode (decorativo, generato dal numero) */}
+            <div className="mt-4">
+              <Barcode number={cardData.cardNumber} height={64} />
             </div>
           </div>
 
@@ -144,37 +137,4 @@ export default function CardDisplayModal({
       </motion.div>
     </AnimatePresence>
   )
-}
-
-// Formatta numero tessera con spazi per leggibilità
-function formatCardNumber(number) {
-  if (!number) return ''
-  const clean = number.replace(/\s/g, '')
-  // Raggruppa a 4 cifre
-  return clean.match(/.{1,4}/g)?.join(' ') || clean
-}
-
-// Genera pattern barcode simulato basato sul numero
-function generateBarcodeLines(number) {
-  if (!number) return []
-  const lines = []
-  const chars = number.replace(/\s/g, '').split('')
-
-  // Linee iniziali
-  lines.push(2, 1, 2)
-
-  chars.forEach(char => {
-    const code = char.charCodeAt(0)
-    lines.push(
-      1 + (code % 2),
-      1,
-      1 + ((code >> 1) % 2),
-      1
-    )
-  })
-
-  // Linee finali
-  lines.push(2, 1, 2)
-
-  return lines
 }

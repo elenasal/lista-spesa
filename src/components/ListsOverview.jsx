@@ -1,12 +1,13 @@
 import { useState, forwardRef } from 'react'
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useLongPressDrag } from '../hooks/useLongPressDrag'
-import { ShoppingCart, Plus, Trash2, Store, Settings, Wallet, ScanBarcode, Share2, Gift, ListPlus, Pencil, X, GripVertical } from 'lucide-react'
+import { ShoppingCart, Plus, Trash2, Store, Settings, Wallet, ScanBarcode, Share2, Gift, ListPlus, Pencil, X, GripVertical, Navigation } from 'lucide-react'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useLoyaltyCards } from '../hooks/useLoyaltyCards'
 import { getSupermarketById, getOpenStatus } from '../data/supermarkets'
 import ShareAvatars from './ui/ShareAvatars'
 import CardDisplayModal from './CardDisplayModal'
+import Barcode, { formatCardNumber } from './ui/Barcode'
 import LoyaltyCardModal from './LoyaltyCardModal'
 import EditListModal from './EditListModal'
 import ShareModal from './ShareModal'
@@ -402,6 +403,15 @@ export default function ListsOverview({
               }
             }
 
+            // Indicazioni stradali: Google Maps verso l'indirizzo del punto vendita
+            const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+              `${supermarket.name} ${supermarket.address}, ${supermarket.city}`
+            )}`
+            const handleDirections = (e) => {
+              e.stopPropagation()
+              window.open(directionsUrl, '_blank', 'noopener,noreferrer')
+            }
+
             return (
               <motion.div
                 key={supermarket.id}
@@ -411,46 +421,66 @@ export default function ListsOverview({
               >
                 <div
                   onClick={handleSupermarketTap}
-                  className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-soft cursor-pointer hover:shadow-md transition-all"
+                  className="p-4 bg-white rounded-xl shadow-soft cursor-pointer hover:shadow-md transition-all"
                 >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: supermarket.color }}
-                  >
-                    <Store className="w-6 h-6 text-white" />
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: supermarket.color }}
+                    >
+                      <Store className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-night">{supermarket.name}</p>
+                      {/* Orario - sempre visibile */}
+                      {status && (
+                        <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs mt-0.5">
+                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          <span className={`font-semibold ${status.isOpen ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            {status.isOpen ? 'APERTO' : 'CHIUSO'}
+                          </span>
+                          <span className="text-slate">· {status.detail}</span>
+                        </p>
+                      )}
+                      {!hasCardSaved && (
+                        <p className="text-xs text-slate mt-0.5">
+                          Tocca per aggiungere tessera
+                        </p>
+                      )}
+                    </div>
+                    {/* Indicazioni stradali rapide */}
+                    <button
+                      onClick={handleDirections}
+                      aria-label={`Indicazioni per ${supermarket.name}`}
+                      title="Indicazioni stradali"
+                      className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-ocean hover:bg-sky-light/40 rounded-lg transition-colors"
+                    >
+                      <Navigation className="w-4 h-4" />
+                    </button>
+                    <DropdownMenu actions={supermarketActions} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-night">{supermarket.name}</p>
-                    {/* Orario - sempre visibile */}
-                    {status && (
-                      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs mt-0.5">
-                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                        <span className={`font-semibold ${status.isOpen ? 'text-emerald-600' : 'text-rose-600'}`}>
-                          {status.isOpen ? 'APERTO' : 'CHIUSO'}
-                        </span>
-                        <span className="text-slate">· {status.detail}</span>
-                      </p>
-                    )}
-                    {hasCardSaved ? (
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                          <ScanBarcode className="w-3 h-3" />
+
+                  {/* Barcode carta fedeltà visibile subito (senza aprire il dettaglio) */}
+                  {hasCardSaved && (
+                    <div className="mt-3 pt-3 border-t border-cloud">
+                      <div className="flex items-center justify-center gap-2 mb-1.5">
+                        <ScanBarcode className="w-3.5 h-3.5 text-slate" />
+                        <span className="text-[11px] font-semibold text-slate uppercase tracking-wider">
                           {card.cardName || 'Tessera'}
                         </span>
                         {card.hasLoyaltyProgram && card.points && (
-                          <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                          <span className="flex items-center gap-1 text-[11px] text-amber-600">
                             <Gift className="w-3 h-3" />
                             {card.points.toLocaleString('it-IT')} pt
                           </span>
                         )}
                       </div>
-                    ) : (
-                      <p className="text-xs text-slate mt-0.5">
-                        Tocca per aggiungere tessera
+                      <Barcode number={card.cardNumber} height={44} className="max-w-full overflow-hidden" />
+                      <p className="mt-1.5 text-center font-mono text-sm tracking-widest text-night">
+                        {formatCardNumber(card.cardNumber)}
                       </p>
-                    )}
-                  </div>
-                  <DropdownMenu actions={supermarketActions} />
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )
