@@ -112,16 +112,16 @@ const ListCard = forwardRef(function ListCard({ list, canDelete, canReorder, onS
               className="w-2.5 h-2.5 rounded-full flex-shrink-0"
               style={{ backgroundColor: supermarket ? supermarket.color : '#0EA5E9' }}
             />
-            <h3 className="font-semibold text-night truncate flex-1 min-w-0">{list.name}</h3>
+            <h3 className="font-semibold text-night truncate min-w-0">{list.name}</h3>
             {supermarket ? (
               <span
-                className="flex-shrink-0 px-1.5 py-0.5 text-xs font-medium rounded text-white"
+                className="ml-auto flex-shrink-0 px-1.5 py-0.5 text-xs font-medium rounded text-white"
                 style={{ backgroundColor: supermarket.color }}
               >
                 {supermarket.name}
               </span>
             ) : (
-              <span className="flex-shrink-0 px-1.5 py-0.5 text-xs font-medium rounded bg-cloud text-slate">
+              <span className="ml-auto flex-shrink-0 px-1.5 py-0.5 text-xs font-medium rounded bg-cloud text-slate">
                 Generica
               </span>
             )}
