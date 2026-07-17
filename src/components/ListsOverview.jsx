@@ -104,32 +104,25 @@ const ListCard = forwardRef(function ListCard({ list, canDelete, canReorder, onS
           </button>
         )}
 
-        {/* Icona - con colore supermercato se associato */}
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center shadow-soft flex-shrink-0"
-          style={{
-            background: supermarket
-              ? `linear-gradient(135deg, ${supermarket.color}, ${supermarket.color}dd)`
-              : 'linear-gradient(135deg, #38BDF8, #0EA5E9)',
-          }}
-        >
-          {supermarket ? (
-            <Store className="w-6 h-6 text-white" />
-          ) : (
-            <ShoppingCart className="w-6 h-6 text-white" />
-          )}
-        </div>
-
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-night">{list.name}</h3>
-            {supermarket && (
+          <div className="flex items-center gap-2">
+            {/* Pallino: colore supermercato se legata, azzurro se generica */}
+            <span
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+              style={{ backgroundColor: supermarket ? supermarket.color : '#0EA5E9' }}
+            />
+            <h3 className="font-semibold text-night truncate flex-1 min-w-0">{list.name}</h3>
+            {supermarket ? (
               <span
-                className="px-1.5 py-0.5 text-xs font-medium rounded text-white"
+                className="flex-shrink-0 px-1.5 py-0.5 text-xs font-medium rounded text-white"
                 style={{ backgroundColor: supermarket.color }}
               >
                 {supermarket.name}
+              </span>
+            ) : (
+              <span className="flex-shrink-0 px-1.5 py-0.5 text-xs font-medium rounded bg-cloud text-slate">
+                Generica
               </span>
             )}
           </div>
