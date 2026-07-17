@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, forwardRef } from 'react'
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useLongPressDrag } from '../hooks/useLongPressDrag'
 import { ShoppingCart, Plus, Trash2, Store, Settings, Wallet, ScanBarcode, Share2, Gift, ListPlus, Pencil, X, GripVertical } from 'lucide-react'
@@ -36,7 +36,8 @@ function getListStats(listId) {
 }
 
 // Card di una singola lista (estratta per poter usare useDragControls per riga)
-function ListCard({ list, canDelete, canReorder, onSelect, onEdit, onShare, onDelete }) {
+// forwardRef: AnimatePresence passa un ref per animare l'uscita della card.
+const ListCard = forwardRef(function ListCard({ list, canDelete, canReorder, onSelect, onEdit, onShare, onDelete }, ref) {
   const dragControls = useDragControls()
   const longPress = useLongPressDrag(dragControls)
   const stats = getListStats(list.id)
@@ -78,6 +79,7 @@ function ListCard({ list, canDelete, canReorder, onSelect, onEdit, onShare, onDe
 
   return (
     <Root
+      ref={ref}
       {...rootProps}
       layout
       initial={{ opacity: 0, y: 10 }}
@@ -174,7 +176,7 @@ function ListCard({ list, canDelete, canReorder, onSelect, onEdit, onShare, onDe
       </div>
     </Root>
   )
-}
+})
 
 export default function ListsOverview({
   lists,
