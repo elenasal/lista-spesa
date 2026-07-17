@@ -462,21 +462,21 @@ export default function ListsOverview({
 
                   {/* Barcode carta fedeltà visibile subito (senza aprire il dettaglio) */}
                   {hasCardSaved && (
-                    <div className="mt-3 pt-3 border-t border-cloud">
-                      <div className="flex items-center justify-center gap-2 mb-1.5">
-                        <ScanBarcode className="w-3.5 h-3.5 text-slate" />
-                        <span className="text-[11px] font-semibold text-slate uppercase tracking-wider">
+                    <div className="mt-2 pt-2 border-t border-cloud">
+                      <div className="flex items-center justify-center gap-2 mb-1">
+                        <ScanBarcode className="w-3 h-3 text-slate" />
+                        <span className="text-[10px] font-semibold text-slate uppercase tracking-wider">
                           {card.cardName || 'Tessera'}
                         </span>
                         {card.hasLoyaltyProgram && card.points && (
-                          <span className="flex items-center gap-1 text-[11px] text-amber-600">
-                            <Gift className="w-3 h-3" />
+                          <span className="flex items-center gap-1 text-[10px] text-amber-600">
+                            <Gift className="w-2.5 h-2.5" />
                             {card.points.toLocaleString('it-IT')} pt
                           </span>
                         )}
                       </div>
-                      <Barcode number={card.cardNumber} height={44} className="max-w-full overflow-hidden" />
-                      <p className="mt-1.5 text-center font-mono text-sm tracking-widest text-night">
+                      <Barcode number={card.cardNumber} height={36} className="max-w-full overflow-hidden" />
+                      <p className="mt-1 text-center font-mono text-xs tracking-widest text-slate">
                         {formatCardNumber(card.cardNumber)}
                       </p>
                     </div>
