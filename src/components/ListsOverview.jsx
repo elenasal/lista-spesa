@@ -372,7 +372,7 @@ export default function ListsOverview({
       </div>
 
       {favoriteSupermarkets.length > 0 ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {favoriteSupermarkets.map((supermarketId) => {
             const supermarket = getSupermarketById(supermarketId)
             if (!supermarket) return null
