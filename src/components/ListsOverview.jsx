@@ -457,9 +457,9 @@ export default function ListsOverview({
                           </p>
                         </>
                       ) : (
-                        <div className="flex items-center justify-center gap-2 text-slate">
-                          <Plus className="w-7 h-7 text-sky flex-shrink-0" strokeWidth={2.5} />
-                          <span className="text-sm">Tocca per aggiungere tessera</span>
+                        <div className="flex flex-col items-center justify-center gap-0.5 text-slate">
+                          <Plus className="w-7 h-7 text-sky" strokeWidth={2.5} />
+                          <span className="text-xs">Aggiungi tessera</span>
                         </div>
                       )}
                     </div>
