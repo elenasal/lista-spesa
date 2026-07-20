@@ -436,7 +436,7 @@ export default function ListsOverview({
 
                   {/* Riga inferiore: barcode (o CTA) a sinistra, azioni a destra */}
                   <div className="flex items-stretch gap-3 mt-2 pt-2 border-t border-cloud">
-                    <div className="flex-1 min-w-0 flex flex-col items-center justify-center text-center bg-snow rounded-lg px-3 py-2">
+                    <div className="flex-1 min-w-0 flex flex-col items-center justify-center text-center bg-[#e7eff7] rounded-lg px-3 py-2">
                       {hasCardSaved ? (
                         <>
                           <div className="flex items-center justify-center gap-2 mb-1">
