@@ -44,6 +44,17 @@ const ListCard = forwardRef(function ListCard({ list, canDelete, canReorder, onS
   const stats = getListStats(list.id)
   const supermarket = list.supermarketId ? getSupermarketById(list.supermarketId) : null
 
+  // Indicazioni stradali verso il supermercato della lista (solo se legata a un punto vendita)
+  const handleDirections = supermarket
+    ? (e) => {
+        e.stopPropagation()
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+          `${supermarket.name} ${supermarket.address}, ${supermarket.city}`
+        )}`
+        window.open(url, '_blank', 'noopener,noreferrer')
+      }
+    : null
+
   const listActions = []
   listActions.push({
     icon: <Pencil className="w-4 h-4" />,
@@ -163,10 +174,22 @@ const ListCard = forwardRef(function ListCard({ list, canDelete, canReorder, onS
           />
         </div>
 
-        {/* Menu azioni */}
-        {listActions.length > 0 && (
-          <DropdownMenu actions={listActions} />
-        )}
+        {/* Azioni: indicazioni (se legata a un supermercato) + menu */}
+        <div className="flex items-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          {handleDirections && (
+            <button
+              onClick={handleDirections}
+              aria-label={`Indicazioni per ${supermarket.name}`}
+              title={`Indicazioni per ${supermarket.name}`}
+              className="w-9 h-9 flex items-center justify-center text-ocean hover:bg-sky-light/40 rounded-lg transition-colors"
+            >
+              <Navigation className="w-4 h-4" />
+            </button>
+          )}
+          {listActions.length > 0 && (
+            <DropdownMenu actions={listActions} />
+          )}
+        </div>
       </div>
     </Root>
   )

@@ -28,11 +28,13 @@ quel prodotto negli altri supermercati, ma è poco riconoscibile.
 così si capisce che apre il confronto prezzi.
 **Fatto quando:** l'utente individua e usa senza esitazione la freccina di confronto prezzi su ogni prodotto.
 
-### 4. Tasto rapido "indicazioni" a livello di lista 🟡
-**Contesto:** una lista può coinvolgere uno o più supermercati dove andare a fare la spesa.
-**Cosa fare:** in ogni lista, un pulsante rapido che apre le indicazioni stradali verso i supermercati
-coinvolti (se più d'uno, permettere di scegliere o mostrare un itinerario/elenco).
-**Fatto quando:** da una lista, con un tap ottengo il percorso verso il/i supermercato/i di quella spesa.
+### 4. Tasto rapido "indicazioni" a livello di lista ✅ FATTO (2026-07-20)
+**Contesto:** una lista può essere legata a un supermercato specifico dove andare a fare la spesa.
+**Fatto:** nella card di ogni lista legata a un supermercato (`ListsOverview.jsx` → `ListCard`) c'è un
+pulsante `Navigation` accanto al menu azioni che apre Google Maps col percorso verso quel punto vendita
+(stesso pattern del quick win 2). Le liste generiche non mostrano il pulsante.
+**Nota:** il modello dati associa una lista a un solo `supermarketId`; l'ipotesi "più supermercati per
+lista" non è supportata, quindi il tasto punta all'unico punto vendita legato.
 
 ---
 

@@ -6,7 +6,7 @@ Effort: 🟢 piccolo · 🟡 medio · 🔴 grande. (Dettagli completi in `DA_SIS
 1. ✅ ~~**Barcode carta fedeltà** già visibile nella card in "I miei supermercati"~~ — fatto 2026-07-17.
 2. ✅ ~~**Indicazioni stradali** con accesso rapido dalla riga supermercato in home~~ — fatto 2026-07-17.
 3. ✅ ~~**Freccina confronto prezzi** più visibile su ogni prodotto~~ — fatto 2026-07-17.
-4. 🟡 **Tasto indicazioni per lista**: apre il percorso verso i supermercati di quella spesa.
+4. ✅ FATTO **Tasto indicazioni per lista**: apre il percorso verso il supermercato di quella spesa.
 
 ## Nuove funzionalità
 5. 🔴 **Scontrini + dashboard**: foto scontrino → speso/risparmiato/offerte per supermercato.
