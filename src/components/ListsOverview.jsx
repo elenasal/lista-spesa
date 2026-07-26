@@ -1,7 +1,7 @@
 import { useState, forwardRef } from 'react'
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useLongPressDrag } from '../hooks/useLongPressDrag'
-import { ShoppingCart, Plus, Trash2, Store, Settings, ScanBarcode, Share2, Gift, ListPlus, Pencil, GripVertical, Navigation, PackageOpen, ChevronRight, ChevronDown, Receipt } from 'lucide-react'
+import { Plus, Trash2, Store, Settings, ScanBarcode, Share2, Gift, ListPlus, Pencil, GripVertical, Navigation, PackageOpen, ChevronRight, ChevronDown, Receipt } from 'lucide-react'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useLoyaltyCards } from '../hooks/useLoyaltyCards'
 import { getSupermarketById, getOpenStatus } from '../data/supermarkets'
@@ -262,80 +262,92 @@ export default function ListsOverview({
         <ChevronRight className="w-5 h-5 text-slate-light flex-shrink-0" />
       </button>
 
-      {/* Sezione Liste */}
-      <button
-        onClick={() => toggleCollapsed('lists')}
-        className="w-full flex items-center gap-2 mb-5 ml-4 pr-4 text-left"
-        aria-expanded={!collapsed.lists}
-      >
-        <ShoppingCart className="w-5 h-5 text-ocean" />
-        <h2 className="text-lg font-semibold text-night">Le mie liste</h2>
-        <span className="text-sm text-slate-light">({lists.length})</span>
-        <ChevronDown className={`w-5 h-5 text-slate ml-auto transition-transform ${collapsed.lists ? '-rotate-90' : ''}`} />
-      </button>
+      {/* Sezione Liste (pannello azzurro che accoglie le card) */}
+      <div className="mb-6 rounded-2xl bg-[#a6dcf2] p-2">
+        <button
+          onClick={() => toggleCollapsed('lists')}
+          className="w-full flex items-center gap-2 px-2 py-1.5 text-left"
+          aria-expanded={!collapsed.lists}
+        >
+          <h2 className="text-lg font-semibold text-night">Le mie liste</h2>
+          <span className="text-sm text-ocean/70">({lists.length})</span>
+          <ChevronDown className={`w-5 h-5 text-ocean ml-auto transition-transform ${collapsed.lists ? '-rotate-90' : ''}`} />
+        </button>
 
-      <div className={`space-y-3 ${collapsed.lists ? 'hidden' : ''}`}>
-        {lists.length > 1 ? (
-          <Reorder.Group
-            as="div"
-            axis="y"
-            values={lists}
-            onReorder={onReorderLists}
-            className="space-y-3"
-          >
-            {lists.map((list) => (
-              <ListCard
-                key={list.id}
-                list={list}
-                canDelete={lists.length > 1}
-                canReorder
-                onSelect={onSelectList}
-                onEdit={setEditingList}
-                onShare={setSharingList}
-                onDelete={onDeleteList}
-              />
-            ))}
-          </Reorder.Group>
-        ) : (
-          <AnimatePresence mode="popLayout">
-            {lists.map((list) => (
-              <ListCard
-                key={list.id}
-                list={list}
-                canDelete={false}
-                canReorder={false}
-                onSelect={onSelectList}
-                onEdit={setEditingList}
-                onShare={setSharingList}
-                onDelete={onDeleteList}
-              />
-            ))}
-          </AnimatePresence>
+        {!collapsed.lists && (
+          <div className="space-y-3 mt-2">
+            {lists.length > 1 ? (
+              <Reorder.Group
+                as="div"
+                axis="y"
+                values={lists}
+                onReorder={onReorderLists}
+                className="space-y-3"
+              >
+                {lists.map((list) => (
+                  <ListCard
+                    key={list.id}
+                    list={list}
+                    canDelete={lists.length > 1}
+                    canReorder
+                    onSelect={onSelectList}
+                    onEdit={setEditingList}
+                    onShare={setSharingList}
+                    onDelete={onDeleteList}
+                  />
+                ))}
+              </Reorder.Group>
+            ) : (
+              <AnimatePresence mode="popLayout">
+                {lists.map((list) => (
+                  <ListCard
+                    key={list.id}
+                    list={list}
+                    canDelete={false}
+                    canReorder={false}
+                    onSelect={onSelectList}
+                    onEdit={setEditingList}
+                    onShare={setSharingList}
+                    onDelete={onDeleteList}
+                  />
+                ))}
+              </AnimatePresence>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Sezione Supermercati Preferiti */}
-      <div className="flex items-center justify-between mt-10 mb-5 mx-4">
-        <button
-          onClick={() => toggleCollapsed('supermarkets')}
-          className="flex items-center gap-2 text-left"
-          aria-expanded={!collapsed.supermarkets}
-        >
-          <Store className="w-5 h-5 text-ocean" />
-          <h2 className="text-lg font-semibold text-night">I miei supermercati</h2>
-          <span className="text-sm text-slate-light">({favoriteSupermarkets.length})</span>
-          <ChevronDown className={`w-5 h-5 text-slate transition-transform ${collapsed.supermarkets ? '-rotate-90' : ''}`} />
-        </button>
-        <button
-          onClick={onNavigateToSupermarkets}
-          className="flex items-center gap-1 text-sm text-ocean hover:text-deep font-medium transition-colors"
-        >
-          <Settings className="w-4 h-4" />
-          Gestisci
-        </button>
-      </div>
+      {/* Sezione Supermercati (pannello azzurro che accoglie le card) */}
+      <div className="mt-6 rounded-2xl bg-[#a6dcf2] p-2">
+        <div className="flex items-center gap-2 px-2 py-1.5">
+          <button
+            onClick={() => toggleCollapsed('supermarkets')}
+            className="flex items-center gap-2 flex-1 min-w-0 text-left"
+            aria-expanded={!collapsed.supermarkets}
+          >
+            <h2 className="text-lg font-semibold text-night truncate">I miei supermercati</h2>
+            <span className="text-sm text-ocean/70 flex-shrink-0">({favoriteSupermarkets.length})</span>
+          </button>
+          <button
+            onClick={onNavigateToSupermarkets}
+            aria-label="Gestisci supermercati"
+            title="Gestisci supermercati"
+            className="mr-2 text-ocean hover:text-deep transition-colors flex-shrink-0"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => toggleCollapsed('supermarkets')}
+            aria-label={collapsed.supermarkets ? 'Espandi' : 'Comprimi'}
+            className="flex-shrink-0"
+          >
+            <ChevronDown className={`w-5 h-5 text-ocean transition-transform ${collapsed.supermarkets ? '-rotate-90' : ''}`} />
+          </button>
+        </div>
 
-      {!collapsed.supermarkets && (favoriteSupermarkets.length > 0 ? (
+        {!collapsed.supermarkets && (
+          <div className="mt-2">
+            {favoriteSupermarkets.length > 0 ? (
         <div className="space-y-3">
           {favoriteSupermarkets.map((supermarketId) => {
             const supermarket = getSupermarketById(supermarketId)
@@ -467,7 +479,10 @@ export default function ListsOverview({
             Aggiungi supermercati
           </button>
         </div>
-      ))}
+            )}
+          </div>
+        )}
+      </div>
 
       <EditListModal
         isOpen={!!editingList}
