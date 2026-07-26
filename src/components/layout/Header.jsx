@@ -30,8 +30,8 @@ export default function Header({ title, subtitle, onBack, onOpenSupermarkets, ri
         </div>
 
         {/* Contenuto */}
-        <div className="relative max-w-lg mx-auto px-5 pt-8 pb-4">
-          <div className="flex-1">
+        <div className="relative max-w-lg mx-auto px-5 pt-8 pb-4 flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
             {/* Saluto */}
             <motion.p
               initial={{ opacity: 0, y: 10 }}
@@ -62,6 +62,11 @@ export default function Header({ title, subtitle, onBack, onOpenSupermarkets, ri
               </motion.p>
             )}
           </div>
+
+          {/* Azione a destra (es. aiuto/step introduttivi) */}
+          {rightAction && (
+            <div className="relative z-10 flex-shrink-0">{rightAction}</div>
+          )}
         </div>
 
       </motion.header>

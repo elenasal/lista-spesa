@@ -4,11 +4,14 @@ import ListsOverview from './components/ListsOverview'
 import SupermarketsPage from './components/SupermarketsPage'
 import SupermarketDetailPage from './components/SupermarketDetailPage'
 import CatalogPage from './components/CatalogPage'
+import OnboardingFlow from './components/OnboardingFlow'
+import AddListSheet from './components/AddListSheet'
 import Header from './components/layout/Header'
 import NotificationsModal from './components/NotificationsModal'
 import { useMultipleLists } from './hooks/useMultipleLists'
 import { useNotifications } from './hooks/useNotifications'
-import { Bell } from 'lucide-react'
+import { useOnboarding } from './hooks/useOnboarding'
+import { Bell, HelpCircle } from 'lucide-react'
 
 // Viste disponibili
 const VIEWS = {
@@ -42,6 +45,10 @@ function App() {
   // Notifiche (mockup): feed unico offerte + attività liste condivise
   const { items: notifications, unreadCount, markRead, markAllRead } = useNotifications()
   const [showNotifications, setShowNotifications] = useState(false)
+
+  // Onboarding di prima apertura (+ riapertura manuale dal "?" nell'header, per demo)
+  const { needsOnboarding, complete: completeOnboarding } = useOnboarding()
+  const [replayOnboarding, setReplayOnboarding] = useState(false)
 
   const handleSelectList = (listId) => {
     switchList(listId)
@@ -85,6 +92,26 @@ function App() {
       <div className="min-h-screen bg-snow flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-sky/30 border-t-sky rounded-full animate-spin" />
       </div>
+    )
+  }
+
+  // Prima apertura: mostra l'onboarding al posto dell'app finché non è completato/saltato.
+  // Alla chiusura la home monta e rilegge i preferiti appena salvati da localStorage.
+  if (needsOnboarding || replayOnboarding) {
+    return (
+      <OnboardingFlow
+        onComplete={(listId) => {
+          completeOnboarding()
+          setReplayOnboarding(false)
+          // Se è stata creata una lista, atterra già dentro quella lista
+          if (listId) {
+            switchList(listId)
+            setSelectedListId(listId)
+            setCurrentView(VIEWS.LIST)
+          }
+        }}
+        onCreateList={createList}
+      />
     )
   }
 
@@ -136,6 +163,16 @@ function App() {
         title={headerInfo.title}
         subtitle={headerInfo.subtitle}
         onBack={headerInfo.showBack ? handleBack : null}
+        rightAction={isHome ? (
+          <button
+            onClick={() => setReplayOnboarding(true)}
+            aria-label="Rivedi gli step introduttivi"
+            title="Rivedi gli step introduttivi"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white border border-white/25 transition-all"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </button>
+        ) : null}
       />
       <main className="relative max-w-lg mx-auto px-3 pb-24">
         {/* Fascia azzurrina in alto per continuità con l'header (solo pagine interne) */}
@@ -179,13 +216,16 @@ function App() {
         )}
       </main>
 
+      {/* Footer creazione lista (barra fissa + bottom sheet) — solo in home */}
+      {isHome && <AddListSheet onCreateList={handleCreateList} />}
+
       {/* Campanello notifiche offerte — FAB fisso in basso a destra (mockup) */}
       {!showNotifications && (
         <button
           onClick={() => setShowNotifications(true)}
           aria-label="Notifiche offerte"
           className={`fixed right-4 z-40 w-14 h-14 rounded-2xl bg-ocean text-white shadow-soft-lg flex items-center justify-center hover:bg-deep active:scale-95 transition-all ${
-            currentView === VIEWS.LIST ? 'bottom-24' : 'bottom-6'
+            currentView === VIEWS.LIST || isHome ? 'bottom-24' : 'bottom-6'
           }`}
         >
           <Bell className="w-6 h-6" />

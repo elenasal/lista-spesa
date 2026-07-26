@@ -1,7 +1,7 @@
 import { useState, forwardRef } from 'react'
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useLongPressDrag } from '../hooks/useLongPressDrag'
-import { ShoppingCart, Plus, Trash2, Store, Settings, Wallet, ScanBarcode, Share2, Gift, ListPlus, Pencil, X, GripVertical, Navigation, PackageOpen, ChevronRight } from 'lucide-react'
+import { ShoppingCart, Plus, Trash2, Store, Settings, ScanBarcode, Share2, Gift, ListPlus, Pencil, GripVertical, Navigation, PackageOpen, ChevronRight } from 'lucide-react'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useLoyaltyCards } from '../hooks/useLoyaltyCards'
 import { getSupermarketById, getOpenStatus } from '../data/supermarkets'
@@ -184,10 +184,6 @@ export default function ListsOverview({
   onNavigateToSupermarkets,
   onNavigateToCatalog
 }) {
-  const [isCreating, setIsCreating] = useState(false)
-  const [newListName, setNewListName] = useState('')
-  const [newListBudget, setNewListBudget] = useState('')
-
   // Lista in modifica (apre EditListModal)
   const [editingList, setEditingList] = useState(null)
 
@@ -206,25 +202,6 @@ export default function ListsOverview({
   const handleCreateListForSupermarket = (supermarket) => {
     const listName = `Lista ${supermarket.name}`
     onCreateList(listName, supermarket.id)
-  }
-
-  const handleCreate = () => {
-    if (newListName.trim()) {
-      onCreateList(newListName, null, newListBudget || null)
-      setNewListName('')
-      setNewListBudget('')
-      setIsCreating(false)
-    }
-  }
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleCreate()
-    } else if (e.key === 'Escape') {
-      setIsCreating(false)
-      setNewListName('')
-      setNewListBudget('')
-    }
   }
 
   return (
@@ -303,68 +280,6 @@ export default function ListsOverview({
             ))}
           </AnimatePresence>
         )}
-
-        {/* Nuova lista */}
-        <motion.div layout className="px-4 py-3 rounded-xl" style={{ backgroundColor: 'rgb(57 183 239 / 29%)' }}>
-          {isCreating ? (
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <input
-                  autoFocus
-                  type="text"
-                  value={newListName}
-                  onChange={(e) => setNewListName(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Nome della lista..."
-                  className="flex-1 min-w-0 px-4 py-3 bg-white border border-cloud rounded-xl text-night placeholder:text-slate-light focus:outline-none focus:border-sky focus:ring-2 focus:ring-sky/20 shadow-soft"
-                />
-                <button
-                  onClick={handleCreate}
-                  disabled={!newListName.trim()}
-                  className="px-4 py-3 bg-ocean text-white rounded-xl hover:bg-deep disabled:opacity-50 transition-all font-medium shadow-soft"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 flex-1 min-w-0 px-4 py-2.5 bg-white border border-cloud rounded-xl shadow-soft">
-                  <Wallet className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    step="0.01"
-                    min="0"
-                    value={newListBudget}
-                    onChange={(e) => setNewListBudget(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Budget"
-                    className="flex-1 min-w-0 bg-transparent text-night placeholder:text-slate-light focus:outline-none"
-                  />
-                  <span className="text-slate text-sm flex-shrink-0">€</span>
-                </div>
-                <button
-                  onClick={() => {
-                    setIsCreating(false)
-                    setNewListName('')
-                    setNewListBudget('')
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-2.5 text-ocean hover:text-deep hover:bg-white/60 rounded-xl text-sm font-medium transition-colors flex-shrink-0"
-                >
-                  <X className="w-4 h-4" />
-                  Annulla
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setIsCreating(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-cloud rounded-xl text-slate hover:border-sky hover:text-ocean transition-all shadow-soft"
-            >
-              <Plus className="w-5 h-5" />
-              <span className="font-medium">Nuova lista...</span>
-            </button>
-          )}
-        </motion.div>
       </div>
 
       {/* Sezione Supermercati Preferiti */}
