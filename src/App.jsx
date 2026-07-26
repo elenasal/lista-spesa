@@ -3,6 +3,7 @@ import ShoppingList from './components/ShoppingList'
 import ListsOverview from './components/ListsOverview'
 import SupermarketsPage from './components/SupermarketsPage'
 import SupermarketDetailPage from './components/SupermarketDetailPage'
+import CatalogPage from './components/CatalogPage'
 import Header from './components/layout/Header'
 import NotificationsModal from './components/NotificationsModal'
 import { useMultipleLists } from './hooks/useMultipleLists'
@@ -15,6 +16,7 @@ const VIEWS = {
   LIST: 'list',
   SUPERMARKETS: 'supermarkets',
   SUPERMARKET_DETAIL: 'supermarket-detail',
+  CATALOG: 'catalog',
 }
 
 function App() {
@@ -74,6 +76,10 @@ function App() {
     setCurrentView(VIEWS.SUPERMARKETS)
   }
 
+  const handleOpenCatalog = () => {
+    setCurrentView(VIEWS.CATALOG)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-snow flex items-center justify-center">
@@ -97,6 +103,12 @@ function App() {
         return {
           title: 'Supermercati',
           subtitle: 'Confronta i prezzi',
+          showBack: true,
+        }
+      case VIEWS.CATALOG:
+        return {
+          title: 'Sfoglia prodotti',
+          subtitle: 'Scopri e aggiungi ai preferiti',
           showBack: true,
         }
       case VIEWS.SUPERMARKET_DETAIL:
@@ -149,6 +161,7 @@ function App() {
         {currentView === VIEWS.SUPERMARKET_DETAIL && (
           <SupermarketDetailPage supermarket={selectedSupermarket} />
         )}
+        {currentView === VIEWS.CATALOG && <CatalogPage />}
         {currentView === VIEWS.HOME && (
           <ListsOverview
             lists={lists}
@@ -161,6 +174,7 @@ function App() {
             }}
             onReorderLists={reorderLists}
             onNavigateToSupermarkets={handleOpenSupermarkets}
+            onNavigateToCatalog={handleOpenCatalog}
           />
         )}
       </main>

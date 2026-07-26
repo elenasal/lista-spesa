@@ -13,8 +13,9 @@ import FilterBar from './FilterBar'
 import EmptyState from './ui/EmptyState'
 import LoadingSpinner from './ui/LoadingSpinner'
 import { PRODUCTS_DATABASE } from '../data/productsDatabase'
+import { getSupermarketById, getDirectionsUrl } from '../data/supermarkets'
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
-import { Trash2, CheckCircle2, FilterX, Wallet, Pencil, Check, X, Share2 } from 'lucide-react'
+import { Trash2, CheckCircle2, FilterX, Wallet, Pencil, Check, X, Share2, Navigation } from 'lucide-react'
 
 // Ordine delle categorie per la visualizzazione
 const CATEGORY_ORDER = [
@@ -148,6 +149,21 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
   // Calcola quanti prodotti sono nascosti
   const hiddenCount = items.length - filteredItems.length
 
+  // Supermercati presenti nella lista: quello legato alla lista (se c'è),
+  // altrimenti i punti vendita distinti assegnati ai singoli prodotti.
+  // Serve a mostrare i link "indicazioni" verso ognuno.
+  const listSupermarkets = useMemo(() => {
+    const ids = new Set()
+    if (listSupermarketId) {
+      ids.add(listSupermarketId)
+    } else {
+      for (const item of items) {
+        if (item.supermarketId) ids.add(item.supermarketId)
+      }
+    }
+    return [...ids].map(getSupermarketById).filter(Boolean)
+  }, [items, listSupermarketId])
+
   // Trova il container per l'icona condividi nell'header
   useEffect(() => {
     setActionPortal(document.getElementById('header-action-portal'))
@@ -188,6 +204,31 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
 
       {/* Riga prodotti preferiti (quick-add) in cima */}
       <FavoriteProductsBar onAdd={addItem} listSupermarketId={listSupermarketId} />
+
+      {/* Indicazioni verso i supermercati presenti nella lista */}
+      {listSupermarkets.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap mt-4">
+          <span className="flex items-center gap-1 text-xs font-medium text-slate">
+            <Navigation className="w-3.5 h-3.5 text-ocean" />
+            Indicazioni:
+          </span>
+          {listSupermarkets.map((sm) => (
+            <button
+              key={sm.id}
+              onClick={() => window.open(getDirectionsUrl(sm), '_blank', 'noopener,noreferrer')}
+              aria-label={`Indicazioni per ${sm.name}`}
+              title={`Indicazioni per ${sm.name} · ${sm.address}`}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-cloud shadow-soft text-sm text-night hover:border-sky hover:text-ocean transition-colors"
+            >
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: sm.color }}
+              />
+              <span className="truncate max-w-[140px]">{sm.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Stats bar */}
       {items.length > 0 && (

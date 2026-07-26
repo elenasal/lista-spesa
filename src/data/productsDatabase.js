@@ -704,6 +704,56 @@ export function getProductById(productId) {
   return PRODUCTS_DATABASE.find(p => p.id === productId)
 }
 
+// Brand noti riconosciuti dal nome prodotto (best-effort finché il DB non avrà
+// un campo `brand` popolato dal dev). I multi-parola vanno prima dei singoli
+// per avere la corrispondenza più specifica.
+const KNOWN_BRANDS = [
+  'Mulino Bianco', 'De Cecco', 'Santa Lucia', 'San Daniele', 'Rio Mare',
+  'Coca-Cola', "Sant'Anna", 'Häagen-Dazs',
+  'Zymil', 'Granarolo', 'Vallelata', 'Muller', 'Fage', 'President', 'Barilla',
+  'Rummo', 'Scotti', 'Pavesi', 'Nutella', 'Lavazza', 'Illy', 'Kimbo',
+  'Levissima', 'Skipper', 'Chiquita', 'Rovagnati', 'Findus', 'Monini',
+  'Mutti', 'Scottex', 'Pantene', 'Colgate', 'Dash', 'Coccolino', 'Chanteclair',
+]
+
+// Helper: brand di un prodotto. Usa `product.brand` se presente, altrimenti lo
+// deduce dal nome. Ritorna null per i prodotti generici (es. Zucchine, Carote).
+export function getBrand(product) {
+  if (product?.brand) return product.brand
+  if (!product?.name) return null
+  const nameLower = product.name.toLowerCase()
+  return KNOWN_BRANDS.find((b) => nameLower.includes(b.toLowerCase())) || null
+}
+
+// Helper: elenco ordinato dei brand distinti presenti a catalogo.
+export function getAllBrands() {
+  const set = new Set()
+  for (const p of PRODUCTS_DATABASE) {
+    const b = getBrand(p)
+    if (b) set.add(b)
+  }
+  return [...set].sort((a, b) => a.localeCompare(b, 'it'))
+}
+
+// Helper: prezzo più basso di un prodotto tra TUTTI i supermercati (o uno specifico).
+// Ritorna { supermarketId, price (effettivo), onSale, listPrice } oppure null.
+export function getLowestPrice(product, supermarketId = null) {
+  if (!product?.prices) return null
+
+  const entries = supermarketId
+    ? (product.prices[supermarketId] ? [[supermarketId, product.prices[supermarketId]]] : [])
+    : Object.entries(product.prices)
+
+  let best = null
+  for (const [smId, info] of entries) {
+    const effective = info.onSale ? info.salePrice : info.price
+    if (best === null || effective < best.price) {
+      best = { supermarketId: smId, price: effective, onSale: !!info.onSale, listPrice: info.price }
+    }
+  }
+  return best
+}
+
 // Helper: trova il prezzo migliore per un prodotto tra i supermercati preferiti
 export function getBestPrice(product, favoriteSupermarkets) {
   if (!product?.prices || !favoriteSupermarkets?.length) return null

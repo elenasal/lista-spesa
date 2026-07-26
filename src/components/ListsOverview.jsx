@@ -1,7 +1,7 @@
 import { useState, forwardRef } from 'react'
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useLongPressDrag } from '../hooks/useLongPressDrag'
-import { ShoppingCart, Plus, Trash2, Store, Settings, Wallet, ScanBarcode, Share2, Gift, ListPlus, Pencil, X, GripVertical, Navigation } from 'lucide-react'
+import { ShoppingCart, Plus, Trash2, Store, Settings, Wallet, ScanBarcode, Share2, Gift, ListPlus, Pencil, X, GripVertical, Navigation, PackageOpen, ChevronRight } from 'lucide-react'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useLoyaltyCards } from '../hooks/useLoyaltyCards'
 import { getSupermarketById, getOpenStatus } from '../data/supermarkets'
@@ -43,17 +43,6 @@ const ListCard = forwardRef(function ListCard({ list, canDelete, canReorder, onS
   const longPress = useLongPressDrag(dragControls)
   const stats = getListStats(list.id)
   const supermarket = list.supermarketId ? getSupermarketById(list.supermarketId) : null
-
-  // Indicazioni stradali verso il supermercato della lista (solo se legata a un punto vendita)
-  const handleDirections = supermarket
-    ? (e) => {
-        e.stopPropagation()
-        const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-          `${supermarket.name} ${supermarket.address}, ${supermarket.city}`
-        )}`
-        window.open(url, '_blank', 'noopener,noreferrer')
-      }
-    : null
 
   const listActions = []
   listActions.push({
@@ -174,18 +163,8 @@ const ListCard = forwardRef(function ListCard({ list, canDelete, canReorder, onS
           />
         </div>
 
-        {/* Azioni: indicazioni (se legata a un supermercato) + menu */}
+        {/* Azioni: menu */}
         <div className="flex items-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-          {handleDirections && (
-            <button
-              onClick={handleDirections}
-              aria-label={`Indicazioni per ${supermarket.name}`}
-              title={`Indicazioni per ${supermarket.name}`}
-              className="w-9 h-9 flex items-center justify-center text-ocean hover:bg-sky-light/40 rounded-lg transition-colors"
-            >
-              <Navigation className="w-4 h-4" />
-            </button>
-          )}
           {listActions.length > 0 && (
             <DropdownMenu actions={listActions} />
           )}
@@ -202,7 +181,8 @@ export default function ListsOverview({
   onDeleteList,
   onEditList,
   onReorderLists,
-  onNavigateToSupermarkets
+  onNavigateToSupermarkets,
+  onNavigateToCatalog
 }) {
   const [isCreating, setIsCreating] = useState(false)
   const [newListName, setNewListName] = useState('')
@@ -264,6 +244,21 @@ export default function ListsOverview({
       </div>
 
     <div className="relative pt-16 pb-4">
+      {/* CTA: sfoglia il catalogo prodotti (in cima alla home) */}
+      <button
+        onClick={onNavigateToCatalog}
+        className="w-full flex items-center gap-3 mb-6 p-4 bg-white rounded-xl shadow-soft hover:shadow-md transition-all text-left"
+      >
+        <div className="w-11 h-11 rounded-xl bg-sky-light flex items-center justify-center flex-shrink-0">
+          <PackageOpen className="w-6 h-6 text-ocean" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-night">Sfoglia prodotti</h3>
+          <p className="text-sm text-slate">Scopri il catalogo e aggiungi ai preferiti</p>
+        </div>
+        <ChevronRight className="w-5 h-5 text-slate-light flex-shrink-0" />
+      </button>
+
       {/* Sezione Liste */}
       <div className="flex items-center gap-2 mb-5 ml-4">
         <ShoppingCart className="w-5 h-5 text-ocean" />
