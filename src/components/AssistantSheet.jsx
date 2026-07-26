@@ -1,11 +1,10 @@
 import { useState, useMemo } from 'react'
-import { createPortal } from 'react-dom'
-import { motion, AnimatePresence, useDragControls } from 'framer-motion'
 import { Sparkles, X, RotateCcw, Search, Send } from 'lucide-react'
 import { PRODUCTS_DATABASE, getLowestPrice, getBrand, suggestBrandsForTerm } from '../data/productsDatabase'
 import { CATEGORY_ORDER, getCategoryName, suggestCategoriesByKeyword } from '../data/categories'
 import { getSupermarketsByDistance } from '../data/supermarkets'
 import CatalogProductCard from './CatalogProductCard'
+import BottomSheet from './ui/BottomSheet'
 
 // Assistente IA (feature 7) — MOCKUP. Guida la scelta con poche domande mirate e
 // propone i prodotti più adatti. La vera logica conversazionale la aggancerà il dev;
@@ -35,11 +34,6 @@ export default function AssistantSheet({
   const [stepIndex, setStepIndex] = useState(0)
   const [optionQuery, setOptionQuery] = useState('') // input libero / filtro liste lunghe
   const [showAllCats, setShowAllCats] = useState(false) // "nessuna di queste" → scegli tra tutte
-  const dragControls = useDragControls()
-
-  const dismissKeyboard = () => {
-    if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
-  }
 
   // Categorie presenti a catalogo (per la domanda "tipo di prodotto")
   const categoryOptions = useMemo(() => {
@@ -238,38 +232,8 @@ export default function AssistantSheet({
         ? (cur.kind === 'category' ? 'Cerca una categoria…' : 'Scrivi per cercare…')
         : 'Scegli un\'opzione qui sopra'
 
-  return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          className="fixed inset-0 z-[70] flex flex-col justify-end"
-          initial={{ backgroundColor: 'rgba(0,0,0,0)' }}
-          animate={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
-          exit={{ backgroundColor: 'rgba(0,0,0,0)' }}
-          onClick={handleClose}
-        >
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            drag="y"
-            dragControls={dragControls}
-            dragListener={false}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.4 }}
-            onDragEnd={(_, info) => { if (info.offset.y > 100 || info.velocity.y > 500) handleClose() }}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg mx-auto bg-white rounded-t-3xl shadow-soft-lg flex flex-col h-[calc(100dvh-3rem)]"
-          >
-            {/* Maniglia — unica zona che chiude col trascinamento */}
-            <div
-              onPointerDown={(e) => { dismissKeyboard(); dragControls.start(e) }}
-              className="flex-shrink-0 pt-3 pb-2 flex justify-center cursor-grab active:cursor-grabbing touch-none"
-            >
-              <div className="w-11 h-1.5 rounded-full bg-cloud" />
-            </div>
-
+  return (
+    <BottomSheet isOpen={isOpen} onClose={handleClose} fullHeight z="z-[70]">
             {/* Header */}
             <div className="flex-shrink-0 flex items-center gap-3 px-4 pb-2">
               <div className="w-9 h-9 rounded-full bg-gradient-to-r from-violet-500 to-ocean text-white flex items-center justify-center flex-shrink-0">
@@ -453,11 +417,7 @@ export default function AssistantSheet({
                 </button>
               )}
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>,
-    document.body
+    </BottomSheet>
   )
 }
 

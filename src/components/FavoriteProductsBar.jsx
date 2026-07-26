@@ -1,15 +1,15 @@
 import { useState } from 'react'
-import { motion, AnimatePresence, useDragControls } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Plus, Heart, Trash2, Settings, X } from 'lucide-react'
 import CategoryIcon from './ui/CategoryIcon'
 import { useFavoriteProducts } from '../hooks/useFavoriteProducts'
+import BottomSheet from './ui/BottomSheet'
 
 // Riga quick-add dei prodotti preferiti, in cima al dettaglio lista.
 // Estratta dal vecchio AddProductForm quando l'aggiunta è passata al bottom sheet.
 export default function FavoriteProductsBar({ onAdd, listSupermarketId = null }) {
   const { favorites: favoriteProducts, hasFavorites: hasFavoriteProducts, removeFavorite } = useFavoriteProducts()
   const [showAllFavorites, setShowAllFavorites] = useState(false)
-  const dragControls = useDragControls()
 
   const handleQuickAddFavorite = (favProduct) => {
     onAdd(
@@ -61,38 +61,7 @@ export default function FavoriteProductsBar({ onAdd, listSupermarketId = null })
       </div>
 
       {/* Modal gestione preferiti */}
-      <AnimatePresence>
-        {showAllFavorites && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 overflow-hidden"
-            onClick={() => setShowAllFavorites(false)}
-          >
-            <motion.div
-              initial={{ y: '100%', opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: '100%', opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              drag="y"
-              dragControls={dragControls}
-              dragListener={false}
-              dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={{ top: 0, bottom: 0.4 }}
-              onDragEnd={(_, info) => {
-                if (info.offset.y > 100 || info.velocity.y > 500) setShowAllFavorites(false)
-              }}
-              className="w-full max-w-[100vw] sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[80vh] flex flex-col overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Maniglia — trascina giù per chiudere */}
-              <div
-                onPointerDown={(e) => dragControls.start(e)}
-                className="flex-shrink-0 pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing touch-none"
-              >
-                <div className="w-11 h-1.5 rounded-full bg-cloud" />
-              </div>
+      <BottomSheet isOpen={showAllFavorites} onClose={() => setShowAllFavorites(false)}>
               <div className="flex items-center justify-between px-4 pb-4 pt-1 border-b border-cloud">
                 <div className="flex items-center gap-2">
                   <Heart className="w-5 h-5 text-rose-500 fill-current" />
@@ -157,10 +126,7 @@ export default function FavoriteProductsBar({ onAdd, listSupermarketId = null })
                   </div>
                 )}
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </BottomSheet>
     </div>
   )
 }
