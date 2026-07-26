@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Heart, Tag } from 'lucide-react'
+import { Heart, Tag, Plus, Check } from 'lucide-react'
 import CategoryIcon from './ui/CategoryIcon'
 import { getCategoryColor, getCategoryName } from '../data/categories'
 import { getLowestPrice } from '../data/productsDatabase'
@@ -8,10 +9,19 @@ import { getSupermarketById } from '../data/supermarkets'
 // Card prodotto per il catalogo "Sfoglia prodotti".
 // Mostra la foto del prodotto (campo `product.image`, popolato dal dev in futuro)
 // oppure un segnaposto grafico colorato per categoria. Tap sul cuore → preferito.
-export default function CatalogProductCard({ product, isFavorite, onToggleFavorite, supermarketId = null }) {
+// Se `onAddToList` è fornita (modalità "aggiungi alla lista"), mostra anche un "+".
+export default function CatalogProductCard({ product, isFavorite, onToggleFavorite, onAddToList, supermarketId = null }) {
   const cat = getCategoryColor(product.category)
   const best = getLowestPrice(product, supermarketId)
   const sm = best ? getSupermarketById(best.supermarketId) : null
+  const [justAdded, setJustAdded] = useState(false)
+
+  const handleAdd = (e) => {
+    e.stopPropagation()
+    onAddToList()
+    setJustAdded(true)
+    setTimeout(() => setJustAdded(false), 1200)
+  }
 
   return (
     <motion.div
@@ -61,6 +71,21 @@ export default function CatalogProductCard({ product, isFavorite, onToggleFavori
         >
           <Heart className={`w-5 h-5 transition-all ${isFavorite ? 'fill-current' : ''}`} />
         </motion.button>
+
+        {/* Aggiungi alla lista (solo in modalità "aggiungi") */}
+        {onAddToList && (
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            onClick={handleAdd}
+            aria-label="Aggiungi alla lista"
+            title="Aggiungi alla lista"
+            className={`absolute bottom-2 right-2 w-9 h-9 flex items-center justify-center rounded-full shadow-soft transition-colors ${
+              justAdded ? 'bg-emerald-500 text-white' : 'bg-ocean text-white hover:bg-deep'
+            }`}
+          >
+            {justAdded ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+          </motion.button>
+        )}
       </div>
 
       {/* Info prodotto */}

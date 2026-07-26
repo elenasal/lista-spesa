@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useDragControls } from 'framer-motion'
-import { Plus, X, ScanLine, Tag, Star, Check, Minus, ChevronDown } from 'lucide-react'
+import { Plus, X, ScanLine, Tag, Star, Check, Minus, ChevronDown, LayoutGrid, ArrowLeft } from 'lucide-react'
 import CategoryIcon from './ui/CategoryIcon'
 import BarcodeScanner from './BarcodeScanner'
-import { searchProducts, getBestPrice, getPricesForFavorites } from '../data/productsDatabase'
+import CatalogPage from './CatalogPage'
+import { searchProducts, getBestPrice, getPricesForFavorites, getLowestPrice } from '../data/productsDatabase'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useFavoriteProducts } from '../hooks/useFavoriteProducts'
 import { getSupermarketById } from '../data/supermarkets'
@@ -19,6 +20,7 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
   const [showScanner, setShowScanner] = useState(false)
   const [scannedProduct, setScannedProduct] = useState(null)
   const [showCategories, setShowCategories] = useState(false)
+  const [showCatalog, setShowCatalog] = useState(false)
 
   // L'ultimo prodotto aggiunto (in fase di rifinitura nello step "dettagli")
   const [lastItem, setLastItem] = useState(null)
@@ -147,6 +149,13 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
     setQuery('')
     setShowCategories(false)
     inputRef.current?.focus()
+  }
+
+  // Aggiunta rapida dal catalogo (modalità "Sfoglia catalogo"): aggiunge alla lista
+  // con quantità 1 e il miglior prezzo disponibile (del supermercato della lista se legata).
+  const handleCatalogAdd = (product) => {
+    const best = getLowestPrice(product, listSupermarketId || null)
+    onAdd(product.name, 1, 'pz', product.category, best?.price ?? null, listSupermarketId || null)
   }
 
   // Selezione di una tile
@@ -456,6 +465,15 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
                   ) : (
                     /* --- STEP RICERCA: griglia di tile --- */
                     <div>
+                      {/* Sfoglia il catalogo con foto (aggiunge alla lista) */}
+                      <button
+                        onClick={() => setShowCatalog(true)}
+                        className="w-full mb-3 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-cloud bg-snow text-ocean font-medium hover:border-sky transition-colors"
+                      >
+                        <LayoutGrid className="w-4 h-4" />
+                        Sfoglia il catalogo con foto
+                      </button>
+
                       {!trimmed && (
                         <p className="text-xs font-semibold text-slate uppercase tracking-wide mb-2">
                           {favoriteProducts.length > 0 ? 'Preferiti e frequenti' : 'Suggerimenti'}
@@ -544,6 +562,45 @@ export default function AddProductSheet({ onAdd, onUpdate, getSuggestions, listS
                   )}
                 </div>
               </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+
+      {/* Overlay catalogo in modalità "aggiungi alla lista" */}
+      {createPortal(
+        <AnimatePresence>
+          {showCatalog && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] bg-white flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex-shrink-0 bg-ocean text-white">
+                <div className="max-w-lg mx-auto px-3 py-3 flex items-center gap-3">
+                  <button
+                    onClick={() => setShowCatalog(false)}
+                    aria-label="Torna alla lista"
+                    className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white/15 hover:bg-white/25 rounded-xl border border-white/20 transition-all"
+                  >
+                    <ArrowLeft className="w-6 h-6" />
+                  </button>
+                  <div className="min-w-0">
+                    <h2 className="font-bold text-lg leading-tight truncate">Aggiungi dal catalogo</h2>
+                    <p className="text-xs text-sky-100/90">Tocca + per aggiungere alla lista</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Catalogo in modalità aggiungi */}
+              <div className="flex-1 overflow-y-auto">
+                <div className="max-w-lg mx-auto px-3 pb-24">
+                  <CatalogPage onAddToList={handleCatalogAdd} />
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>,

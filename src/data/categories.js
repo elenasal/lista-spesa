@@ -42,6 +42,32 @@ export const CATEGORY_COLORS = {
   'altro': { bg: '#F1F5F9', fg: '#64748B' },
 }
 
+// Parole-chiave per risalire dalla ricerca di un prodotto alle categorie plausibili
+// (es. "patate" → verdura, surgelati, dispensa). Mockup: nella versione reale questa
+// mappatura la fornirà il catalogo/dev. Un termine può stare in più categorie.
+const CATEGORY_KEYWORDS = {
+  'frutta-verdura': ['patat', 'pomodor', 'insalata', 'frutta', 'verdura', 'banana', 'mela', 'zucchin', 'carot', 'cipolla', 'spinaci', 'limone', 'arancia'],
+  'pane-cereali': ['pane', 'fette', 'cereali', 'cracker', 'grissini', 'farina'],
+  'latticini': ['latte', 'yogurt', 'formaggio', 'mozzarella', 'burro', 'uova', 'uovo', 'parmigiano', 'panna'],
+  'carne-pesce': ['pollo', 'carne', 'pesce', 'salmone', 'prosciutto', 'manzo', 'tacchino', 'salsiccia', 'tonno fresco'],
+  'surgelati': ['surgelat', 'gelato', 'patat', 'bastoncini', 'piselli', 'minestrone', 'pizza surgelata'],
+  'dispensa': ['patat', 'chips', 'pasta', 'riso', 'olio', 'sugo', 'pelati', 'passata', 'tonno', 'biscott', 'caffè', 'nutella', 'zucchero', 'sale', 'legumi', 'scatolame'],
+  'bevande': ['acqua', 'coca', 'succo', 'bibita', 'vino', 'birra', 'aranciata', 'tè', 'the'],
+  'igiene': ['shampoo', 'dentifricio', 'sapone', 'deodorante', 'bagnoschiuma', 'spazzolino'],
+  'casa': ['detersiv', 'carta igienica', 'ammorbidente', 'sgrassatore', 'pulizia', 'scottex', 'tovagliol'],
+}
+
+// Ritorna gli id categoria plausibili per un termine di ricerca (>= 2 caratteri).
+export function suggestCategoriesByKeyword(term) {
+  const q = (term || '').toLowerCase().trim()
+  if (q.length < 2) return []
+  const out = []
+  for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+    if (keywords.some((k) => k.includes(q) || q.includes(k))) out.push(cat)
+  }
+  return out
+}
+
 export function getCategoryName(category) {
   return CATEGORY_NAMES[category] || 'Altro'
 }

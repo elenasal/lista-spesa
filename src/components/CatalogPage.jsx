@@ -7,8 +7,9 @@ import { useFavoriteProducts } from '../hooks/useFavoriteProducts'
 import { SUPERMARKETS } from '../data/supermarkets'
 import CatalogProductCard from './CatalogProductCard'
 import SelectDropdown from './ui/SelectDropdown'
+import AssistantSheet from './AssistantSheet'
 
-export default function CatalogPage() {
+export default function CatalogPage({ onAddToList = null }) {
   const { favorites, isFavorite, toggleFavorite } = useFavoriteProducts()
 
   const [query, setQuery] = useState('')
@@ -22,7 +23,7 @@ export default function CatalogPage() {
   const [zone, setZone] = useState('Novara, Italia')
   // Modalità ricerca intelligente (feature 7): qui c'è solo il toggle del simbolo;
   // la logica IA la aggancerà il dev.
-  const [aiSearch, setAiSearch] = useState(false)
+  const [showAssistant, setShowAssistant] = useState(false)
 
   // Opzioni supermercato: TUTTI i punti vendita della zona con almeno un prodotto
   // a catalogo (non solo i preferiti), ordinati per distanza.
@@ -52,10 +53,10 @@ export default function CatalogPage() {
     []
   )
 
-  // Prodotti filtrati — filtri cumulativi (AND): parola chiave, categoria, supermercato, brand
+  // Prodotti filtrati — filtri cumulativi (AND): parola chiave (nome), categoria, supermercato, brand
   const results = useMemo(() => {
     const q = query.toLowerCase().trim()
-    return PRODUCTS_DATABASE.filter(p => {
+    return PRODUCTS_DATABASE.filter((p) => {
       if (category && p.category !== category) return false
       if (supermarketId && !p.prices[supermarketId]) return false
       if (brand && getBrand(p) !== brand) return false
@@ -82,19 +83,14 @@ export default function CatalogPage() {
 
   return (
     <div className="pt-10 pb-24">
-      {/* Ricerca prodotto — azione principale, in cima a tutta larghezza.
-          A destra il toggle "ricerca intelligente" (feature 7, logica IA lato dev). */}
-      <div className={`flex items-center gap-2.5 px-3 py-3 bg-white border rounded-xl transition-colors ${
-        aiSearch
-          ? 'border-violet-400 ring-2 ring-violet-200'
-          : 'border-cloud focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20'
-      }`}>
-        <Search className={`w-5 h-5 flex-shrink-0 ${aiSearch ? 'text-violet-500' : 'text-slate'}`} />
+      {/* Ricerca prodotto — barra semplice, in cima a tutta larghezza */}
+      <div className="flex items-center gap-2.5 px-3 py-3 bg-white border border-cloud rounded-xl focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-colors">
+        <Search className="w-5 h-5 text-slate flex-shrink-0" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={aiSearch ? 'Descrivi cosa cerchi…' : 'Cerca un prodotto...'}
+          placeholder="Cerca un prodotto..."
           className="flex-1 min-w-0 bg-transparent text-night placeholder:text-slate-light focus:outline-none"
         />
         {query && (
@@ -106,20 +102,6 @@ export default function CatalogPage() {
             <X className="w-4 h-4" />
           </button>
         )}
-        <div className="w-px h-5 bg-cloud flex-shrink-0" />
-        <button
-          onClick={() => setAiSearch((v) => !v)}
-          aria-pressed={aiSearch}
-          title={aiSearch ? 'Ricerca intelligente attiva' : 'Attiva la ricerca intelligente'}
-          aria-label={aiSearch ? 'Disattiva ricerca intelligente' : 'Attiva ricerca intelligente'}
-          className={`p-1.5 rounded-full transition-all flex-shrink-0 ${
-            aiSearch
-              ? 'bg-violet-100 text-violet-600'
-              : 'text-slate-light hover:text-violet-500 hover:bg-violet-50'
-          }`}
-        >
-          <Sparkle className={`w-5 h-5 transition-all ${aiSearch ? 'fill-current' : ''}`} />
-        </button>
       </div>
 
       {/* Filtri cumulativi (AND) su due righe:
@@ -211,6 +193,7 @@ export default function CatalogPage() {
                             price: getLowestPrice(product)?.price ?? null,
                           })
                         }
+                        onAddToList={onAddToList ? () => onAddToList(product) : undefined}
                       />
                     ))}
                   </div>
@@ -252,6 +235,7 @@ export default function CatalogPage() {
                     price: getLowestPrice(product)?.price ?? null,
                   })
                 }
+                onAddToList={onAddToList ? () => onAddToList(product) : undefined}
               />
             ))}
           </AnimatePresence>
@@ -265,6 +249,29 @@ export default function CatalogPage() {
           <p className="text-sm text-slate max-w-xs">Prova a modificare i filtri o la ricerca.</p>
         </div>
       )}
+
+      {/* Footer fisso: apre l'assistente guidato (bottom sheet con maniglia) */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#c8eeff] shadow-[0_-2px_12px_rgba(14,165,233,0.10)]">
+        <div className="max-w-lg mx-auto px-3 py-3">
+          <button
+            onClick={() => setShowAssistant(true)}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-violet-500 to-ocean text-white font-semibold shadow-soft-lg active:scale-[0.99] transition-transform"
+          >
+            <Sparkle className="w-5 h-5 fill-current" />
+            Fatti guidare dall'assistente
+          </button>
+        </div>
+      </div>
+
+      {/* Assistente IA guidato (feature 7) */}
+      <AssistantSheet
+        isOpen={showAssistant}
+        onClose={() => setShowAssistant(false)}
+        seedQuery={query}
+        onAddToList={onAddToList}
+        isFavorite={isFavorite}
+        onToggleFavorite={toggleFavorite}
+      />
     </div>
   )
 }

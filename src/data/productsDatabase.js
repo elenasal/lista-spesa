@@ -605,6 +605,19 @@ export const PRODUCTS_DATABASE = [
       'bennet-centro-commerciale': { price: 4.29 },
     }
   },
+  {
+    id: 'patatine-san-carlo-rustica-150g',
+    name: 'San Carlo Patatine Rustica 150g',
+    category: 'dispensa',
+    prices: {
+      'esselunga-viale-giulio-cesare': { price: 1.99 },
+      'lidl-corso-vercelli': { price: 1.79, onSale: true, salePrice: 1.49 },
+      'carrefour-via-verbano': { price: 2.05 },
+      'coop-corso-italia': { price: 1.95 },
+      'conad-via-san-bernardino': { price: 2.09 },
+      'eurospin-viale-kennedy': { price: 1.69 },
+    }
+  },
 
   // === IGIENE ===
   {
@@ -708,7 +721,7 @@ export function getProductById(productId) {
 // un campo `brand` popolato dal dev). I multi-parola vanno prima dei singoli
 // per avere la corrispondenza più specifica.
 const KNOWN_BRANDS = [
-  'Mulino Bianco', 'De Cecco', 'Santa Lucia', 'San Daniele', 'Rio Mare',
+  'Mulino Bianco', 'De Cecco', 'Santa Lucia', 'San Daniele', 'San Carlo', 'Rio Mare',
   'Coca-Cola', "Sant'Anna", 'Häagen-Dazs',
   'Zymil', 'Granarolo', 'Vallelata', 'Muller', 'Fage', 'President', 'Barilla',
   'Rummo', 'Scotti', 'Pavesi', 'Nutella', 'Lavazza', 'Illy', 'Kimbo',
@@ -723,6 +736,41 @@ export function getBrand(product) {
   if (!product?.name) return null
   const nameLower = product.name.toLowerCase()
   return KNOWN_BRANDS.find((b) => nameLower.includes(b.toLowerCase())) || null
+}
+
+// Marchi plausibili per un termine di ricerca (mockup dell'assistente): es.
+// "patatine" → Amica Chips, San Carlo… Nella versione reale questa associazione
+// termine→marchi arriverà dal catalogo/dev. Le chiavi sono sottostringhe del termine.
+const BRAND_HINTS = {
+  'patat': ['Amica Chips', 'San Carlo', 'Pata', "Lay's", 'Fonzies'],
+  'pasta': ['Barilla', 'De Cecco', 'Rummo', 'Voiello', 'Garofalo'],
+  'latte': ['Granarolo', 'Parmalat', 'Zymil', 'Sterilgarda'],
+  'yogurt': ['Müller', 'Fage', 'Danone', 'Vipiteno'],
+  'biscott': ['Mulino Bianco', 'Pavesi', 'Oro Saiwa', 'Gocciole'],
+  'caffè': ['Lavazza', 'Illy', 'Kimbo', 'Segafredo'],
+  'acqua': ['Levissima', 'San Benedetto', "Sant'Anna", 'Ferrarelle'],
+  'tonno': ['Rio Mare', 'Nostromo', 'As do Mar'],
+  'mozzarella': ['Santa Lucia', 'Galbani', 'Vallelata'],
+  'olio': ['Monini', 'Carapelli', 'Bertolli'],
+  'pomodor': ['Mutti', 'Cirio', 'Pomì'],
+  'pelati': ['Mutti', 'Cirio', 'Pomì'],
+  'passata': ['Mutti', 'Cirio', 'Pomì'],
+  'nutella': ['Nutella'],
+  'detersiv': ['Dash', 'Dixan', 'Bio Presto'],
+  'shampoo': ['Pantene', 'Head & Shoulders', 'Garnier'],
+  'dentifricio': ['Colgate', 'Mentadent', 'AZ'],
+}
+
+export function suggestBrandsForTerm(term) {
+  const q = (term || '').toLowerCase().trim()
+  if (q.length < 2) return []
+  const out = []
+  for (const [key, brands] of Object.entries(BRAND_HINTS)) {
+    if (key.includes(q) || q.includes(key)) {
+      for (const b of brands) if (!out.includes(b)) out.push(b)
+    }
+  }
+  return out
 }
 
 // Helper: elenco ordinato dei brand distinti presenti a catalogo.

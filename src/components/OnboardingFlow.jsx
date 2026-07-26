@@ -11,6 +11,7 @@ import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useFavoriteProducts } from '../hooks/useFavoriteProducts'
 import CatalogProductCard from './CatalogProductCard'
 import SelectDropdown from './ui/SelectDropdown'
+import AssistantSheet from './AssistantSheet'
 
 const TOTAL_STEPS = 4
 
@@ -38,7 +39,7 @@ export default function OnboardingFlow({ onComplete, onCreateList }) {
   const [productCategory, setProductCategory] = useState(null)
   const [productBrand, setProductBrand] = useState(null)
   const [productSupermarketId, setProductSupermarketId] = useState(null)
-  const [productAiSearch, setProductAiSearch] = useState(false)
+  const [showAssistant, setShowAssistant] = useState(false)
 
   const productCategoryOptions = useMemo(() => {
     const present = new Set(PRODUCTS_DATABASE.map((p) => p.category))
@@ -164,8 +165,7 @@ export default function OnboardingFlow({ onComplete, onCreateList }) {
               <StepProducts
                 query={productQuery}
                 setQuery={setProductQuery}
-                aiSearch={productAiSearch}
-                setAiSearch={setProductAiSearch}
+                onOpenAssistant={() => setShowAssistant(true)}
                 category={productCategory}
                 setCategory={setProductCategory}
                 brand={productBrand}
@@ -222,6 +222,15 @@ export default function OnboardingFlow({ onComplete, onCreateList }) {
         )}
       </div>
       </div>
+
+      {/* Assistente guidato (bottom sheet con maniglia) */}
+      <AssistantSheet
+        isOpen={showAssistant}
+        onClose={() => setShowAssistant(false)}
+        seedQuery={productQuery}
+        isFavorite={isFavorite}
+        onToggleFavorite={toggleFavProduct}
+      />
     </div>
   )
 }
@@ -308,8 +317,8 @@ function StepSupermarkets({ supermarkets, onToggle, selectedCount }) {
 
 // ---- Step 3: prodotti (stessi filtri del catalogo, senza zona) ----
 function StepProducts({
-  query, setQuery, aiSearch, setAiSearch, category, setCategory, brand, setBrand, supermarketId, setSupermarketId,
-  categoryOptions, brandOptions, supermarketOptions, results, isFavorite, onToggle, selectedCount,
+  query, setQuery, category, setCategory, brand, setBrand, supermarketId, setSupermarketId,
+  categoryOptions, brandOptions, supermarketOptions, results, isFavorite, onToggle, selectedCount, onOpenAssistant,
 }) {
   return (
     <div className="space-y-3">
@@ -319,18 +328,14 @@ function StepProducts({
         <span className="text-slate">di 3</span>
       </div>
 
-      {/* Ricerca per nome + toggle ricerca intelligente (feature 7, logica IA lato dev) */}
-      <div className={`flex items-center gap-2.5 px-3 py-2.5 bg-white border rounded-xl transition-colors ${
-        aiSearch
-          ? 'border-violet-400 ring-2 ring-violet-200'
-          : 'border-cloud focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20'
-      }`}>
-        <Search className={`w-4 h-4 flex-shrink-0 ${aiSearch ? 'text-violet-500' : 'text-slate'}`} />
+      {/* Ricerca per nome (barra semplice) */}
+      <div className="flex items-center gap-2.5 px-3 py-2.5 bg-white border border-cloud rounded-xl focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-colors">
+        <Search className="w-4 h-4 text-slate flex-shrink-0" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={aiSearch ? 'Descrivi cosa cerchi…' : 'Cerca un prodotto...'}
+          placeholder="Cerca un prodotto..."
           className="flex-1 min-w-0 bg-transparent text-sm text-night placeholder:text-slate-light focus:outline-none"
         />
         {query && (
@@ -338,19 +343,16 @@ function StepProducts({
             <X className="w-4 h-4" />
           </button>
         )}
-        <div className="w-px h-5 bg-cloud flex-shrink-0" />
-        <button
-          onClick={() => setAiSearch((v) => !v)}
-          aria-pressed={aiSearch}
-          title={aiSearch ? 'Ricerca intelligente attiva' : 'Attiva la ricerca intelligente'}
-          aria-label={aiSearch ? 'Disattiva ricerca intelligente' : 'Attiva ricerca intelligente'}
-          className={`p-1.5 rounded-full transition-all flex-shrink-0 ${
-            aiSearch ? 'bg-violet-100 text-violet-600' : 'text-slate-light hover:text-violet-500 hover:bg-violet-50'
-          }`}
-        >
-          <Sparkle className={`w-5 h-5 transition-all ${aiSearch ? 'fill-current' : ''}`} />
-        </button>
       </div>
+
+      {/* Assistente guidato (uniforme al catalogo) */}
+      <button
+        onClick={onOpenAssistant}
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-ocean text-white font-semibold shadow-soft active:scale-[0.99] transition-transform"
+      >
+        <Sparkle className="w-4 h-4 fill-current" />
+        Fatti guidare dall'assistente
+      </button>
 
       {/* Filtri cumulativi: categoria + brand, poi supermercato (tra i preferiti) */}
       <div className="grid grid-cols-2 gap-2">

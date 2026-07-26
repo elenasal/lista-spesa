@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
-import { Check, Trash2, Pencil, X, ChevronDown, Tag, Star, Euro, Heart, MoreVertical, Store, GripVertical, ArrowLeftRight } from 'lucide-react'
+import { Check, Trash2, Pencil, X, ChevronDown, Tag, Star, Euro, Heart, MoreVertical, Store, GripVertical, ArrowLeftRight, MapPin } from 'lucide-react'
 import { useLongPressDrag } from '../hooks/useLongPressDrag'
 import CategoryIcon from './ui/CategoryIcon'
 import { searchProducts, getPricesForFavorites } from '../data/productsDatabase'
+import { getZonePrices, sortByPrice, sortByDistance, getAverageInZone } from '../data/zonePricing'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useFavoriteProducts } from '../hooks/useFavoriteProducts'
-import { getSupermarketById } from '../data/supermarkets'
+import { getSupermarketById, formatDistance } from '../data/supermarkets'
 import { getProductIcon } from '../data/productIcons'
 
 const CATEGORIES = [
@@ -50,6 +51,9 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate, reorde
   const [showUnits, setShowUnits] = useState(false)
   const [showPrices, setShowPrices] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
+  // Confronto prezzi: ambito (preferiti / tutta la zona) e ordinamento (prezzo / distanza)
+  const [zoneScope, setZoneScope] = useState('preferiti')
+  const [zoneSort, setZoneSort] = useState('prezzo')
   const inputRef = useRef(null)
   const dropdownRef = useRef(null)
   const unitsRef = useRef(null)
@@ -76,14 +80,26 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate, reorde
     ? getPricesForFavorites(matchedProduct, priceSupermarketIds)
     : []
 
+  // Prezzi in tutta la zona (anche fuori dai preferiti) + prezzo medio (feature 8+9+11)
+  const zonePrices = matchedProduct ? getZonePrices(matchedProduct) : []
+  const zoneAverage = matchedProduct ? getAverageInZone(matchedProduct) : null
+  const hasFavoritePrices = productPrices.length > 0
+
   // Nelle liste legate a un supermercato non si sceglie il supermercato:
   // niente pannello di confronto, si mostra solo il prezzo di quel supermercato.
-  const canCompare = !listSupermarketId && productPrices.length > 0
+  // Confronto possibile se il prodotto ha prezzi in zona (superset dei preferiti).
+  const canCompare = !listSupermarketId && zonePrices.length > 0
+
+  // Ambito effettivo: se non ho preferiti con prezzo, mostro direttamente la zona.
+  const effectiveScope = hasFavoritePrices ? zoneScope : 'zona'
+  const zoneRows = zoneSort === 'distanza' ? sortByDistance(zonePrices) : sortByPrice(zonePrices)
+  const priceRows = effectiveScope === 'zona' ? zoneRows : productPrices
 
   // Supermercato salvato per questo prodotto
   const selectedSupermarket = supermarketId ? getSupermarketById(supermarketId) : null
   const selectedPriceInfo = supermarketId
-    ? productPrices.find(p => p.supermarketId === supermarketId)
+    ? (productPrices.find(p => p.supermarketId === supermarketId)
+        || zonePrices.find(p => p.supermarketId === supermarketId))
     : null
 
   // Funzione per selezionare/deselezionare supermercato
@@ -567,7 +583,49 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate, reorde
             className="overflow-hidden"
           >
             <div className="px-3 pb-3 pt-1 border-t border-cloud/50 overflow-hidden">
-              <p className="text-xs font-medium text-slate mb-2">Scegli supermercato</p>
+              {/* Toggle ambito: i miei preferiti / tutta la zona */}
+              {hasFavoritePrices && (
+                <div className="flex gap-1 mb-2 p-0.5 bg-cloud/50 rounded-lg">
+                  {[
+                    { id: 'preferiti', label: 'I miei preferiti' },
+                    { id: 'zona', label: 'Tutta la zona' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={(e) => { e.stopPropagation(); setZoneScope(opt.id) }}
+                      className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                        effectiveScope === opt.id ? 'bg-white text-ocean shadow-soft' : 'text-slate'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Toggle ordinamento (solo in modalità zona) */}
+              {effectiveScope === 'zona' && (
+                <div className="flex gap-1.5 mb-2">
+                  {[
+                    { id: 'prezzo', label: 'Più conveniente', icon: <Euro className="w-3 h-3" /> },
+                    { id: 'distanza', label: 'Più vicino', icon: <MapPin className="w-3 h-3" /> },
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={(e) => { e.stopPropagation(); setZoneSort(opt.id) }}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                        zoneSort === opt.id
+                          ? 'bg-ocean text-white border-ocean'
+                          : 'bg-white text-slate border-cloud hover:border-sky'
+                      }`}
+                    >
+                      {opt.icon}
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="space-y-1.5 overflow-hidden">
                 {/* Opzione "Nessuna preferenza" */}
                 {supermarketId && (
@@ -583,10 +641,14 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate, reorde
                   </button>
                 )}
 
-                {productPrices.map((priceInfo, idx) => {
+                {priceRows.map((priceInfo, idx) => {
                   const supermarket = getSupermarketById(priceInfo.supermarketId)
-                  const isBest = idx === 0
+                  const inZone = effectiveScope === 'zona'
+                  const isBestPrice = idx === 0 && (!inZone || zoneSort === 'prezzo')
+                  const isNearest = inZone && zoneSort === 'distanza' && idx === 0
+                  const isTop = isBestPrice || isNearest
                   const isSelected = priceInfo.supermarketId === supermarketId
+                  const isFav = favorites.includes(priceInfo.supermarketId)
 
                   return (
                     <button
@@ -598,9 +660,11 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate, reorde
                       className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm min-w-0 overflow-hidden transition-all ${
                         isSelected
                           ? 'bg-ocean/10 border-2 border-ocean'
-                          : isBest
-                            ? 'bg-green-50 border border-green-200 hover:border-green-300'
-                            : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                          : isNearest
+                            ? 'bg-sky-light/40 border border-sky/40 hover:border-sky'
+                            : isBestPrice
+                              ? 'bg-green-50 border border-green-200 hover:border-green-300'
+                              : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
                       }`}
                     >
                       {/* Check se selezionato o colore supermercato */}
@@ -615,14 +679,22 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate, reorde
                         />
                       )}
 
-                      {/* Nome e indirizzo supermercato */}
+                      {/* Nome + (in zona) distanza / (preferiti) indirizzo */}
                       <div className="flex-1 min-w-0 text-left">
-                        <span className={`block ${isSelected ? 'font-medium text-ocean' : isBest ? 'font-medium text-green-800' : 'text-gray-700'}`}>
-                          {supermarket?.name}
+                        <span className={`flex items-center gap-1 ${isSelected ? 'font-medium text-ocean' : isBestPrice ? 'font-medium text-green-800' : 'text-gray-700'}`}>
+                          <span className="truncate">{supermarket?.name}</span>
+                          {isFav && <Heart className="w-3 h-3 text-rose-400 fill-rose-400 flex-shrink-0" />}
                         </span>
-                        <span className="text-xs text-gray-500 truncate block">
-                          {supermarket?.address}
-                        </span>
+                        {inZone ? (
+                          <span className="flex items-center gap-1 text-xs text-gray-500">
+                            <MapPin className="w-3 h-3" />
+                            {formatDistance(priceInfo.distance)}
+                            {isNearest && <span className="text-ocean font-medium">· più vicino</span>}
+                            {isBestPrice && <span className="text-green-600 font-medium">· miglior prezzo</span>}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-500 truncate block">{supermarket?.address}</span>
+                        )}
                       </div>
 
                       {/* Prezzo */}
@@ -638,15 +710,23 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate, reorde
                             <Tag className="w-3.5 h-3.5 text-orange-500" />
                           </>
                         ) : (
-                          <span className={isSelected ? 'font-medium text-ocean' : isBest ? 'font-medium text-green-700' : ''}>
+                          <span className={isSelected ? 'font-medium text-ocean' : isBestPrice ? 'font-medium text-green-700' : ''}>
                             {formatPrice(priceInfo.effectivePrice)}
                           </span>
                         )}
-                        {isBest && !isSelected && <Star className="w-3.5 h-3.5 text-green-600 fill-current" />}
+                        {isBestPrice && !isSelected && <Star className="w-3.5 h-3.5 text-green-600 fill-current" />}
+                        {isNearest && !isSelected && <MapPin className="w-3.5 h-3.5 text-ocean" />}
                       </div>
                     </button>
                   )
                 })}
+
+                {/* Prezzo medio in zona (feature 9) */}
+                {zoneAverage != null && (
+                  <p className="text-xs text-slate pt-2 mt-1 border-t border-cloud/50">
+                    Prezzo medio in zona: <span className="font-semibold text-night">{formatPrice(zoneAverage)}</span>
+                  </p>
+                )}
               </div>
             </div>
           </motion.div>

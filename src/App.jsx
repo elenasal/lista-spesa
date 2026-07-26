@@ -225,7 +225,7 @@ function App() {
           onClick={() => setShowNotifications(true)}
           aria-label="Notifiche offerte"
           className={`fixed right-4 z-40 w-14 h-14 rounded-2xl bg-ocean text-white shadow-soft-lg flex items-center justify-center hover:bg-deep active:scale-95 transition-all ${
-            currentView === VIEWS.LIST || isHome ? 'bottom-24' : 'bottom-6'
+            currentView === VIEWS.LIST || isHome || currentView === VIEWS.CATALOG ? 'bottom-24' : 'bottom-6'
           }`}
         >
           <Bell className="w-6 h-6" />
