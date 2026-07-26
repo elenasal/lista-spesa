@@ -5,11 +5,12 @@
 // poter ordinare per "più conveniente" (prezzo) o "più vicino" (distanza) e
 // calcolare il prezzo medio di zona.
 
-import { SUPERMARKETS } from './supermarkets'
+import { SUPERMARKETS, distanceKm } from './supermarkets'
 
 // Elenco { supermarketId, name, color, address, distance, price, onSale, salePrice,
 // effectivePrice } dei supermercati della zona che vendono il prodotto.
-export function getZonePrices(product) {
+// `userCoords` (se presente) rende reale la distanza.
+export function getZonePrices(product, userCoords = null) {
   if (!product?.prices) return []
   return SUPERMARKETS.filter((sm) => product.prices[sm.id]).map((sm) => {
     const info = product.prices[sm.id]
@@ -18,7 +19,7 @@ export function getZonePrices(product) {
       name: sm.name,
       color: sm.color,
       address: sm.address,
-      distance: sm.distance,
+      distance: distanceKm(sm, userCoords),
       price: info.price,
       onSale: !!info.onSale,
       salePrice: info.salePrice,

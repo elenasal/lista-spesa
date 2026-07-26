@@ -9,6 +9,7 @@ import { PRODUCTS_DATABASE, getLowestPrice, getBrand, getAllBrands } from '../da
 import { CATEGORY_ORDER, getCategoryName } from '../data/categories'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useFavoriteProducts } from '../hooks/useFavoriteProducts'
+import { useLocationContext } from '../contexts/LocationContext'
 import CatalogProductCard from './CatalogProductCard'
 import SelectDropdown from './ui/SelectDropdown'
 import AssistantSheet from './AssistantSheet'
@@ -25,8 +26,8 @@ const STEP_META = {
 export default function OnboardingFlow({ onComplete, onCreateList }) {
   const [step, setStep] = useState(1)
 
-  // Step 1 — zona (mock; salvata per uso futuro)
-  const [zone, setZone] = useState('')
+  // Step 1 — zona: posizione reale condivisa (LocationContext)
+  const { label: zone, setLabel: setZone, requestLocation, status: locStatus } = useLocationContext()
 
   // Step 2 — supermercati preferiti
   const { supermarketsWithFavorites, toggleFavorite: toggleFavSupermarket, favorites: favSupermarketIds } =
@@ -87,15 +88,6 @@ export default function OnboardingFlow({ onComplete, onCreateList }) {
     else finish()
   }
 
-  const handleUseMyLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        () => setZone('La mia posizione attuale'),
-        () => { /* negata: l'utente cerca la zona a mano */ }
-      )
-    }
-  }
-
   const handleCreateAndFinish = () => {
     const name = listName.trim() || 'La mia spesa'
     const newList = onCreateList(name, listSupermarketId || null)
@@ -151,7 +143,8 @@ export default function OnboardingFlow({ onComplete, onCreateList }) {
               <StepLocation
                 zone={zone}
                 setZone={setZone}
-                onUseMyLocation={handleUseMyLocation}
+                onUseMyLocation={requestLocation}
+                status={locStatus}
               />
             )}
             {step === 2 && (
@@ -236,21 +229,23 @@ export default function OnboardingFlow({ onComplete, onCreateList }) {
 }
 
 // ---- Step 1: posizione ----
-function StepLocation({ zone, setZone, onUseMyLocation }) {
+function StepLocation({ zone, setZone, onUseMyLocation, status }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col items-center text-center py-4">
-        <div className="w-20 h-20 rounded-3xl bg-sky-light flex items-center justify-center mb-2">
-          <MapPin className="w-10 h-10 text-ocean" />
+        <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-2 ${status === 'granted' ? 'bg-emerald-50' : 'bg-sky-light'}`}>
+          <MapPin className={`w-10 h-10 ${status === 'granted' ? 'text-emerald-500' : 'text-ocean'}`} />
         </div>
+        {status === 'granted' && <p className="text-sm text-emerald-600 font-medium">Posizione rilevata ✓</p>}
+        {status === 'denied' && <p className="text-sm text-rose-500">Posizione negata: cerca la zona a mano.</p>}
       </div>
 
       <button
         onClick={onUseMyLocation}
         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-sky-light text-ocean font-semibold hover:bg-sky-light/70 transition-colors"
       >
-        <Locate className="w-5 h-5" />
-        Usa la mia posizione
+        <Locate className={`w-5 h-5 ${status === 'loading' ? 'animate-pulse' : ''}`} />
+        {status === 'loading' ? 'Rilevamento…' : status === 'granted' ? 'Aggiorna posizione' : 'Usa la mia posizione'}
       </button>
 
       <div className="flex items-center gap-3 text-xs text-slate-light">

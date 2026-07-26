@@ -169,9 +169,9 @@ export function formatDistance(km) {
   return `${km.toFixed(1)}km`
 }
 
-// Ottieni supermercati ordinati per distanza
-export function getSupermarketsByDistance() {
-  return [...SUPERMARKETS].sort((a, b) => a.distance - b.distance)
+// Ottieni supermercati ordinati per distanza (reale se `userCoords`, altrimenti mock)
+export function getSupermarketsByDistance(userCoords = null) {
+  return [...SUPERMARKETS].sort((a, b) => distanceKm(a, userCoords) - distanceKm(b, userCoords))
 }
 
 // Calcola lo stato apertura corrente in base all'ora del dispositivo.
@@ -221,4 +221,39 @@ export function formatDayHours(ranges) {
 export function getDirectionsUrl(supermarket) {
   const dest = encodeURIComponent(`${supermarket.name}, ${supermarket.address}, ${supermarket.city}`)
   return `https://www.google.com/maps/dir/?api=1&destination=${dest}`
+}
+
+// Coordinate approssimate dei punti vendita (zona Novara) per calcolare la distanza
+// reale dalla posizione dell'utente. ⚠️ MOCKUP: coordinate d'esempio nei dintorni di Novara.
+const SUPERMARKET_COORDS = {
+  'esselunga-viale-giulio-cesare': { lat: 45.4300, lng: 8.6400 },
+  'lidl-corso-vercelli': { lat: 45.4505, lng: 8.6050 },
+  'carrefour-via-verbano': { lat: 45.4650, lng: 8.6205 },
+  'coop-corso-italia': { lat: 45.4480, lng: 8.6180 },
+  'conad-via-san-bernardino': { lat: 45.4400, lng: 8.6300 },
+  'eurospin-viale-kennedy': { lat: 45.4550, lng: 8.6400 },
+  'md-via-novara': { lat: 45.4200, lng: 8.6100 },
+  'bennet-centro-commerciale': { lat: 45.4700, lng: 8.6500 },
+  'penny-via-biandrate': { lat: 45.4600, lng: 8.5900 },
+  'aldi-corso-vercelli': { lat: 45.4520, lng: 8.6000 },
+}
+
+// Distanza in km tra due coordinate (formula dell'emisenoverso / haversine).
+export function haversineKm(a, b) {
+  const R = 6371
+  const toRad = (d) => (d * Math.PI) / 180
+  const dLat = toRad(b.lat - a.lat)
+  const dLng = toRad(b.lng - a.lng)
+  const lat1 = toRad(a.lat)
+  const lat2 = toRad(b.lat)
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(h))
+}
+
+// Distanza di un supermercato dall'utente: reale se conosciamo la posizione e le
+// coordinate del punto vendita, altrimenti il valore mock `distance`.
+export function distanceKm(supermarket, userCoords) {
+  const sc = SUPERMARKET_COORDS[supermarket.id]
+  if (userCoords && sc) return haversineKm(userCoords, sc)
+  return supermarket.distance
 }

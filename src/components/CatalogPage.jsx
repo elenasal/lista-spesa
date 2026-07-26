@@ -8,6 +8,7 @@ import { SUPERMARKETS } from '../data/supermarkets'
 import CatalogProductCard from './CatalogProductCard'
 import SelectDropdown from './ui/SelectDropdown'
 import AssistantSheet from './AssistantSheet'
+import { useLocationContext } from '../contexts/LocationContext'
 
 export default function CatalogPage({ onAddToList = null }) {
   const { favorites, isFavorite, toggleFavorite } = useFavoriteProducts()
@@ -18,9 +19,8 @@ export default function CatalogPage({ onAddToList = null }) {
   const [brand, setBrand] = useState(null)
   // Sezione "I miei preferiti" espandibile/collassabile (parte collassata)
   const [showFavorites, setShowFavorites] = useState(false)
-  // Zona (mockup Novara). Dà contesto al filtro supermercato: i punti vendita
-  // elencati sono quelli "in questa zona". Da collegare alla geolocalizzazione reale.
-  const [zone, setZone] = useState('Novara, Italia')
+  // Zona: posizione reale condivisa (geolocalizzazione + etichetta), da LocationContext
+  const { label: zone, setLabel: setZone, requestLocation, status: locStatus } = useLocationContext()
   // Modalità ricerca intelligente (feature 7): qui c'è solo il toggle del simbolo;
   // la logica IA la aggancerà il dev.
   const [showAssistant, setShowAssistant] = useState(false)
@@ -118,11 +118,12 @@ export default function CatalogPage({ onAddToList = null }) {
             className="flex-1 min-w-0 bg-transparent text-sm text-night placeholder:text-slate-light focus:outline-none"
           />
           <button
-            className="p-0.5 text-ocean hover:bg-sky-light rounded-full transition-all flex-shrink-0"
-            title="Usa la mia posizione"
+            onClick={requestLocation}
+            className={`p-0.5 rounded-full transition-all flex-shrink-0 ${locStatus === 'granted' ? 'text-emerald-500' : 'text-ocean hover:bg-sky-light'}`}
+            title={locStatus === 'denied' ? 'Posizione non disponibile' : 'Usa la mia posizione'}
             aria-label="Usa la mia posizione"
           >
-            <Locate className="w-4 h-4" />
+            <Locate className={`w-4 h-4 ${locStatus === 'loading' ? 'animate-pulse' : ''}`} />
           </button>
         </div>
 

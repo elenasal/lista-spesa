@@ -8,6 +8,7 @@ import { getZonePrices, sortByPrice, sortByDistance, getAverageInZone } from '..
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useFavoriteProducts } from '../hooks/useFavoriteProducts'
 import { getSupermarketById, formatDistance } from '../data/supermarkets'
+import { useLocationContext } from '../contexts/LocationContext'
 import { getProductIcon } from '../data/productIcons'
 
 const CATEGORIES = [
@@ -80,8 +81,11 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate, reorde
     ? getPricesForFavorites(matchedProduct, priceSupermarketIds)
     : []
 
+  // Posizione reale (se disponibile) per distanze/ordinamento "più vicino"
+  const { coords } = useLocationContext()
+
   // Prezzi in tutta la zona (anche fuori dai preferiti) + prezzo medio (feature 8+9+11)
-  const zonePrices = matchedProduct ? getZonePrices(matchedProduct) : []
+  const zonePrices = matchedProduct ? getZonePrices(matchedProduct, coords) : []
   const zoneAverage = matchedProduct ? getAverageInZone(matchedProduct) : null
   const hasFavoritePrices = productPrices.length > 0
 

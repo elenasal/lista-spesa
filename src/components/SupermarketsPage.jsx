@@ -3,15 +3,21 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, Store, Check, MapPin, Search, X, Locate, ScanBarcode, Gift, ChevronRight } from 'lucide-react'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useLoyaltyCards } from '../hooks/useLoyaltyCards'
-import { formatDistance, getOpenStatus } from '../data/supermarkets'
+import { formatDistance, getOpenStatus, distanceKm } from '../data/supermarkets'
+import { useLocationContext } from '../contexts/LocationContext'
 import LoyaltyCardModal from './LoyaltyCardModal'
 import CardDisplayModal from './CardDisplayModal'
 
 export default function SupermarketsPage({ onOpenDetail }) {
   const { supermarketsWithFavorites, toggleFavorite, hasFavorites } = useFavoriteSupermarkets()
   const { getCard, saveCard, removeCard, hasCard } = useLoyaltyCards()
-  const [searchValue, setSearchValue] = useState('Novara, Italia')
+  const { label: searchValue, setLabel: setSearchValue, requestLocation, status: locStatus, coords } = useLocationContext()
   const [isSearchFocused, setIsSearchFocused] = useState(false)
+
+  // Ordina per distanza reale quando conosciamo la posizione
+  const orderedSupermarkets = [...supermarketsWithFavorites].sort(
+    (a, b) => distanceKm(a, coords) - distanceKm(b, coords)
+  )
 
   // Modal tessera
   const [editingCard, setEditingCard] = useState(null) // supermercato per cui editare tessera
@@ -46,18 +52,33 @@ export default function SupermarketsPage({ onOpenDetail }) {
           )}
           <div className="w-px h-6 bg-cloud" />
           <button
-            className="p-1.5 text-ocean hover:bg-sky-light rounded-full transition-all"
-            title="Usa la mia posizione"
+            onClick={requestLocation}
+            className={`p-1.5 rounded-full transition-all ${locStatus === 'granted' ? 'text-emerald-500' : 'text-ocean hover:bg-sky-light'}`}
+            title={locStatus === 'denied' ? 'Posizione non disponibile' : 'Usa la mia posizione'}
           >
-            <Locate className="w-5 h-5" />
+            <Locate className={`w-5 h-5 ${locStatus === 'loading' ? 'animate-pulse' : ''}`} />
           </button>
         </div>
 
-        {/* Risultato posizione */}
+        {/* Stato posizione */}
         <div className="flex items-center gap-2 mt-3 px-1">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-sm text-night font-medium">Novara, Piemonte</span>
-          <span className="text-xs text-slate">· Posizione attuale</span>
+          {locStatus === 'granted' ? (
+            <>
+              <div className="w-2 h-2 bg-green-500 rounded-full" />
+              <span className="text-sm text-night font-medium">{searchValue || 'La mia posizione'}</span>
+              <span className="text-xs text-slate">· distanze reali</span>
+            </>
+          ) : locStatus === 'loading' ? (
+            <>
+              <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+              <span className="text-sm text-slate">Rilevamento posizione…</span>
+            </>
+          ) : (
+            <button onClick={requestLocation} className="flex items-center gap-2 text-sm text-ocean hover:text-deep">
+              <div className="w-2 h-2 bg-slate-300 rounded-full" />
+              {locStatus === 'denied' ? 'Posizione negata · tocca per riprovare' : 'Usa la mia posizione per le distanze reali'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -72,7 +93,7 @@ export default function SupermarketsPage({ onOpenDetail }) {
       {/* Lista supermercati */}
       <div className="space-y-3">
         <AnimatePresence mode="popLayout">
-          {supermarketsWithFavorites.map((supermarket) => {
+          {orderedSupermarkets.map((supermarket) => {
             const status = getOpenStatus(supermarket)
             return (
             <motion.div
@@ -109,9 +130,9 @@ export default function SupermarketsPage({ onOpenDetail }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-night">{supermarket.name}</h3>
-                    {/* Badge distanza */}
+                    {/* Badge distanza (reale se posizione nota) */}
                     <span className="px-2 py-0.5 bg-sky-light text-ocean text-xs font-medium rounded-full">
-                      {formatDistance(supermarket.distance)}
+                      {formatDistance(distanceKm(supermarket, coords))}
                     </span>
                   </div>
                   {/* Indirizzo */}
