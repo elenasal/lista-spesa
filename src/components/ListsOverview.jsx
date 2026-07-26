@@ -1,7 +1,7 @@
 import { useState, forwardRef } from 'react'
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useLongPressDrag } from '../hooks/useLongPressDrag'
-import { ShoppingCart, Plus, Trash2, Store, Settings, ScanBarcode, Share2, Gift, ListPlus, Pencil, GripVertical, Navigation, PackageOpen, ChevronRight } from 'lucide-react'
+import { ShoppingCart, Plus, Trash2, Store, Settings, ScanBarcode, Share2, Gift, ListPlus, Pencil, GripVertical, Navigation, PackageOpen, ChevronRight, Receipt } from 'lucide-react'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useLoyaltyCards } from '../hooks/useLoyaltyCards'
 import { getSupermarketById, getOpenStatus } from '../data/supermarkets'
@@ -182,7 +182,8 @@ export default function ListsOverview({
   onEditList,
   onReorderLists,
   onNavigateToSupermarkets,
-  onNavigateToCatalog
+  onNavigateToCatalog,
+  onNavigateToDashboard
 }) {
   // Lista in modifica (apre EditListModal)
   const [editingList, setEditingList] = useState(null)
@@ -232,6 +233,21 @@ export default function ListsOverview({
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-night">Sfoglia prodotti</h3>
           <p className="text-sm text-slate">Scopri il catalogo e aggiungi ai preferiti</p>
+        </div>
+        <ChevronRight className="w-5 h-5 text-slate-light flex-shrink-0" />
+      </button>
+
+      {/* CTA: dashboard spese / scontrini */}
+      <button
+        onClick={onNavigateToDashboard}
+        className="w-full flex items-center gap-3 mb-6 p-4 bg-white rounded-xl shadow-soft hover:shadow-md transition-all text-left"
+      >
+        <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+          <Receipt className="w-6 h-6 text-emerald-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-night">Le mie spese</h3>
+          <p className="text-sm text-slate">Scontrini: speso e risparmiato per supermercato</p>
         </div>
         <ChevronRight className="w-5 h-5 text-slate-light flex-shrink-0" />
       </button>

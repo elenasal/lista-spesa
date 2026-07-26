@@ -4,6 +4,7 @@ import ListsOverview from './components/ListsOverview'
 import SupermarketsPage from './components/SupermarketsPage'
 import SupermarketDetailPage from './components/SupermarketDetailPage'
 import CatalogPage from './components/CatalogPage'
+import ReceiptsDashboard from './components/ReceiptsDashboard'
 import OnboardingFlow from './components/OnboardingFlow'
 import AddListSheet from './components/AddListSheet'
 import Header from './components/layout/Header'
@@ -20,6 +21,7 @@ const VIEWS = {
   SUPERMARKETS: 'supermarkets',
   SUPERMARKET_DETAIL: 'supermarket-detail',
   CATALOG: 'catalog',
+  DASHBOARD: 'dashboard',
 }
 
 function App() {
@@ -87,6 +89,10 @@ function App() {
     setCurrentView(VIEWS.CATALOG)
   }
 
+  const handleOpenDashboard = () => {
+    setCurrentView(VIEWS.DASHBOARD)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-snow flex items-center justify-center">
@@ -136,6 +142,12 @@ function App() {
         return {
           title: 'Sfoglia prodotti',
           subtitle: 'Scopri e aggiungi ai preferiti',
+          showBack: true,
+        }
+      case VIEWS.DASHBOARD:
+        return {
+          title: 'Le mie spese',
+          subtitle: 'Scontrini e risparmi per supermercato',
           showBack: true,
         }
       case VIEWS.SUPERMARKET_DETAIL:
@@ -199,6 +211,7 @@ function App() {
           <SupermarketDetailPage supermarket={selectedSupermarket} />
         )}
         {currentView === VIEWS.CATALOG && <CatalogPage />}
+        {currentView === VIEWS.DASHBOARD && <ReceiptsDashboard />}
         {currentView === VIEWS.HOME && (
           <ListsOverview
             lists={lists}
@@ -212,6 +225,7 @@ function App() {
             onReorderLists={reorderLists}
             onNavigateToSupermarkets={handleOpenSupermarkets}
             onNavigateToCatalog={handleOpenCatalog}
+            onNavigateToDashboard={handleOpenDashboard}
           />
         )}
       </main>
@@ -225,7 +239,7 @@ function App() {
           onClick={() => setShowNotifications(true)}
           aria-label="Notifiche offerte"
           className={`fixed right-4 z-40 w-14 h-14 rounded-2xl bg-ocean text-white shadow-soft-lg flex items-center justify-center hover:bg-deep active:scale-95 transition-all ${
-            currentView === VIEWS.LIST || isHome || currentView === VIEWS.CATALOG ? 'bottom-24' : 'bottom-6'
+            currentView === VIEWS.LIST || isHome || currentView === VIEWS.CATALOG || currentView === VIEWS.DASHBOARD ? 'bottom-24' : 'bottom-6'
           }`}
         >
           <Bell className="w-6 h-6" />

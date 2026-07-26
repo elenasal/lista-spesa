@@ -67,6 +67,15 @@ export default function CatalogPage({ onAddToList = null }) {
 
   const hasFilters = !!query || !!category || !!supermarketId || !!brand
 
+  // Feature 9 — prezzo medio in zona per ricerche generiche (termine con più prodotti):
+  // media del prezzo più basso di ciascun prodotto che matcha.
+  const zoneAveragePrice = useMemo(() => {
+    if (!query.trim() || results.length < 2) return null
+    const prices = results.map((p) => getLowestPrice(p, supermarketId)?.price).filter((v) => v != null)
+    if (prices.length < 2) return null
+    return prices.reduce((a, b) => a + b, 0) / prices.length
+  }, [query, results, supermarketId])
+
   // Prodotti preferiti risolti verso il catalogo (per mostrarli come card).
   // Se un preferito non è a catalogo si costruisce un prodotto minimo (senza prezzo).
   const favoriteProducts = useMemo(() => {
@@ -218,6 +227,17 @@ export default function CatalogPage({ onAddToList = null }) {
           </button>
         )}
       </p>
+
+      {/* Feature 9 — prezzo medio in zona per ricerca generica */}
+      {zoneAveragePrice != null && (
+        <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-sky-light/40 border border-sky/20 rounded-xl">
+          <MapPin className="w-4 h-4 text-ocean flex-shrink-0" />
+          <p className="text-sm text-night">
+            Prezzo medio in zona per «<span className="font-medium">{query.trim()}</span>»:{' '}
+            <span className="font-semibold text-ocean">{zoneAveragePrice.toFixed(2).replace('.', ',')} €</span>
+          </p>
+        </div>
+      )}
 
       {/* Griglia prodotti */}
       {results.length > 0 ? (
