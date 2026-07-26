@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Save, Pencil, Wallet } from 'lucide-react'
+import CEInput from './ui/CEInput'
 
 /**
  * Modal per modificare una lista (nome e budget)
@@ -76,14 +77,15 @@ export default function EditListModal({ isOpen, onClose, list, onSave }) {
               <label className="block text-sm font-medium text-night mb-1.5">
                 Nome della lista
               </label>
-              <input
+              <CEInput
                 autoFocus
-                type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={handleKeyDown}
+                onChange={setName}
+                onEnter={handleSave}
+                onEscape={onClose}
                 placeholder="Es. Spesa settimanale"
-                className="w-full px-3 py-2.5 bg-snow border border-cloud rounded-xl text-night placeholder:text-slate-light focus:outline-none focus:border-sky focus:ring-1 focus:ring-sky"
+                ariaLabel="Nome della lista"
+                className="w-full px-3 py-2.5 bg-snow border border-cloud rounded-xl text-night focus:border-sky focus:ring-1 focus:ring-sky"
               />
             </div>
 

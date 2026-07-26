@@ -1,7 +1,7 @@
 import { useState, forwardRef } from 'react'
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useLongPressDrag } from '../hooks/useLongPressDrag'
-import { ShoppingCart, Plus, Trash2, Store, Settings, ScanBarcode, Share2, Gift, ListPlus, Pencil, GripVertical, Navigation, PackageOpen, ChevronRight, Receipt } from 'lucide-react'
+import { ShoppingCart, Plus, Trash2, Store, Settings, ScanBarcode, Share2, Gift, ListPlus, Pencil, GripVertical, Navigation, PackageOpen, ChevronRight, ChevronDown, Receipt } from 'lucide-react'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useLoyaltyCards } from '../hooks/useLoyaltyCards'
 import { getSupermarketById, getOpenStatus } from '../data/supermarkets'
@@ -199,6 +199,16 @@ export default function ListsOverview({
   const [displayingCard, setDisplayingCard] = useState(null)
   const [editingCard, setEditingCard] = useState(null)
 
+  // Sezioni home collassabili (stato persistito, senza riquadri aggiuntivi)
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('lista-spesa-home-collapsed')) || {} } catch { return {} }
+  })
+  const toggleCollapsed = (key) => setCollapsed((prev) => {
+    const next = { ...prev, [key]: !prev[key] }
+    try { localStorage.setItem('lista-spesa-home-collapsed', JSON.stringify(next)) } catch { /* no-op */ }
+    return next
+  })
+
   // Crea lista per supermercato
   const handleCreateListForSupermarket = (supermarket) => {
     const listName = `Lista ${supermarket.name}`
@@ -253,12 +263,18 @@ export default function ListsOverview({
       </button>
 
       {/* Sezione Liste */}
-      <div className="flex items-center gap-2 mb-5 ml-4">
+      <button
+        onClick={() => toggleCollapsed('lists')}
+        className="w-full flex items-center gap-2 mb-5 ml-4 pr-4 text-left"
+        aria-expanded={!collapsed.lists}
+      >
         <ShoppingCart className="w-5 h-5 text-ocean" />
         <h2 className="text-lg font-semibold text-night">Le mie liste</h2>
-      </div>
+        <span className="text-sm text-slate-light">({lists.length})</span>
+        <ChevronDown className={`w-5 h-5 text-slate ml-auto transition-transform ${collapsed.lists ? '-rotate-90' : ''}`} />
+      </button>
 
-      <div className="space-y-3">
+      <div className={`space-y-3 ${collapsed.lists ? 'hidden' : ''}`}>
         {lists.length > 1 ? (
           <Reorder.Group
             as="div"
@@ -300,10 +316,16 @@ export default function ListsOverview({
 
       {/* Sezione Supermercati Preferiti */}
       <div className="flex items-center justify-between mt-10 mb-5 mx-4">
-        <div className="flex items-center gap-2">
+        <button
+          onClick={() => toggleCollapsed('supermarkets')}
+          className="flex items-center gap-2 text-left"
+          aria-expanded={!collapsed.supermarkets}
+        >
           <Store className="w-5 h-5 text-ocean" />
           <h2 className="text-lg font-semibold text-night">I miei supermercati</h2>
-        </div>
+          <span className="text-sm text-slate-light">({favoriteSupermarkets.length})</span>
+          <ChevronDown className={`w-5 h-5 text-slate transition-transform ${collapsed.supermarkets ? '-rotate-90' : ''}`} />
+        </button>
         <button
           onClick={onNavigateToSupermarkets}
           className="flex items-center gap-1 text-sm text-ocean hover:text-deep font-medium transition-colors"
@@ -313,7 +335,7 @@ export default function ListsOverview({
         </button>
       </div>
 
-      {favoriteSupermarkets.length > 0 ? (
+      {!collapsed.supermarkets && (favoriteSupermarkets.length > 0 ? (
         <div className="space-y-3">
           {favoriteSupermarkets.map((supermarketId) => {
             const supermarket = getSupermarketById(supermarketId)
@@ -445,7 +467,7 @@ export default function ListsOverview({
             Aggiungi supermercati
           </button>
         </div>
-      )}
+      ))}
 
       <EditListModal
         isOpen={!!editingList}

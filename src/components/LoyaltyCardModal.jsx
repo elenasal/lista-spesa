@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ScanBarcode, Gift, Calendar, Trash2, Save, Camera, Zap } from 'lucide-react'
 import { Html5Qrcode } from 'html5-qrcode'
+import CEInput from './ui/CEInput'
 
 export default function LoyaltyCardModal({
   isOpen,
@@ -159,12 +160,12 @@ export default function LoyaltyCardModal({
                 Numero tessera / Codice a barre
               </label>
               <div className="flex gap-2">
-                <input
-                  type="text"
+                <CEInput
                   value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value)}
+                  onChange={setCardNumber}
                   placeholder="Es. 1234567890123"
-                  className="flex-1 px-3 py-2.5 bg-snow border border-cloud rounded-xl text-night placeholder:text-slate-light focus:outline-none focus:border-sky focus:ring-1 focus:ring-sky"
+                  ariaLabel="Numero tessera"
+                  className="flex-1 px-3 py-2.5 bg-snow border border-cloud rounded-xl text-night focus:border-sky focus:ring-1 focus:ring-sky"
                 />
                 <button
                   type="button"
@@ -208,12 +209,12 @@ export default function LoyaltyCardModal({
               <label className="block text-sm font-medium text-night mb-1.5">
                 Nome tessera (opzionale)
               </label>
-              <input
-                type="text"
+              <CEInput
                 value={cardName}
-                onChange={(e) => setCardName(e.target.value)}
+                onChange={setCardName}
                 placeholder="Es. Fidaty, Carta Insieme..."
-                className="w-full px-3 py-2.5 bg-snow border border-cloud rounded-xl text-night placeholder:text-slate-light focus:outline-none focus:border-sky focus:ring-1 focus:ring-sky"
+                ariaLabel="Nome tessera"
+                className="w-full px-3 py-2.5 bg-snow border border-cloud rounded-xl text-night focus:border-sky focus:ring-1 focus:ring-sky"
               />
             </div>
 

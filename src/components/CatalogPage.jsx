@@ -8,6 +8,7 @@ import { SUPERMARKETS } from '../data/supermarkets'
 import CatalogProductCard from './CatalogProductCard'
 import SelectDropdown from './ui/SelectDropdown'
 import AssistantSheet from './AssistantSheet'
+import CEInput from './ui/CEInput'
 import { useLocationContext } from '../contexts/LocationContext'
 
 export default function CatalogPage({ onAddToList = null }) {
@@ -95,12 +96,12 @@ export default function CatalogPage({ onAddToList = null }) {
       {/* Ricerca prodotto — barra semplice, in cima a tutta larghezza */}
       <div className="flex items-center gap-2.5 px-3 py-3 bg-white border border-cloud rounded-xl focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-colors">
         <Search className="w-5 h-5 text-slate flex-shrink-0" />
-        <input
-          type="text"
+        <CEInput
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={setQuery}
           placeholder="Cerca un prodotto..."
-          className="flex-1 min-w-0 bg-transparent text-night placeholder:text-slate-light focus:outline-none"
+          ariaLabel="Cerca un prodotto"
+          className="flex-1 min-w-0 text-night"
         />
         {query && (
           <button
@@ -119,12 +120,12 @@ export default function CatalogPage({ onAddToList = null }) {
         {/* Zona (mockup Novara): dà contesto al filtro supermercato */}
         <div className="flex items-center gap-2 px-3 py-2.5 bg-white border border-cloud rounded-xl focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-colors">
           <MapPin className="w-4 h-4 text-ocean flex-shrink-0" />
-          <input
-            type="text"
+          <CEInput
             value={zone}
-            onChange={(e) => setZone(e.target.value)}
+            onChange={setZone}
             placeholder="Zona..."
-            className="flex-1 min-w-0 bg-transparent text-sm text-night placeholder:text-slate-light focus:outline-none"
+            ariaLabel="Zona"
+            className="flex-1 min-w-0 text-sm text-night"
           />
           <button
             onClick={requestLocation}

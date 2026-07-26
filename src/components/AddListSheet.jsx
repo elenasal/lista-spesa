@@ -4,6 +4,7 @@ import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { getSupermarketById } from '../data/supermarkets'
 import SelectDropdown from './ui/SelectDropdown'
 import BottomSheet from './ui/BottomSheet'
+import CEInput from './ui/CEInput'
 
 // Barra fissa in basso + bottom sheet per creare una nuova lista in home.
 // Form nello stile del passo "Prima lista" dell'onboarding.
@@ -59,15 +60,14 @@ export default function AddListSheet({ onCreateList }) {
             <label className="text-xs font-semibold text-slate uppercase tracking-wider">Nome della lista</label>
             <div className="flex items-center gap-2.5 px-3 py-3 mt-2 bg-white border border-cloud rounded-xl shadow-soft focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-colors">
               <ListPlus className="w-5 h-5 text-slate flex-shrink-0" />
-              <input
+              <CEInput
                 autoFocus
-                type="text"
-                autoComplete="off" data-lpignore="true" data-form-type="other"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
+                onChange={setName}
+                onEnter={handleCreate}
                 placeholder="Es. Spesa della settimana"
-                className="flex-1 min-w-0 bg-transparent text-night placeholder:text-slate-light focus:outline-none"
+                ariaLabel="Nome della lista"
+                className="flex-1 min-w-0 text-night"
               />
             </div>
           </div>

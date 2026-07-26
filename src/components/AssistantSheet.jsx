@@ -5,6 +5,7 @@ import { CATEGORY_ORDER, getCategoryName, suggestCategoriesByKeyword } from '../
 import { getSupermarketsByDistance } from '../data/supermarkets'
 import CatalogProductCard from './CatalogProductCard'
 import BottomSheet from './ui/BottomSheet'
+import CEInput from './ui/CEInput'
 
 // Assistente IA (feature 7) — MOCKUP. Guida la scelta con poche domande mirate e
 // propone i prodotti più adatti. La vera logica conversazionale la aggancerà il dev;
@@ -392,13 +393,14 @@ export default function AssistantSheet({
                 }`}
               >
                 {barMode === 'filter' && <Search className="w-4 h-4 text-violet-400 flex-shrink-0" />}
-                <input
+                <CEInput
                   value={optionQuery}
-                  onChange={(e) => setOptionQuery(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && barMode === 'term') submitTerm() }}
+                  onChange={setOptionQuery}
+                  onEnter={() => { if (barMode === 'term') submitTerm() }}
                   disabled={barMode === 'disabled'}
                   placeholder={barPlaceholder}
-                  className="flex-1 min-w-0 bg-transparent text-sm text-night placeholder:text-slate-light focus:outline-none disabled:cursor-not-allowed"
+                  ariaLabel="Messaggio all'assistente"
+                  className="flex-1 min-w-0 text-sm text-night"
                 />
                 {barMode !== 'disabled' && optionQuery && (
                   <button onClick={() => setOptionQuery('')} className="text-slate hover:text-night flex-shrink-0" aria-label="Cancella">

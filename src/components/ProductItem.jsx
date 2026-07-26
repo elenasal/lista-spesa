@@ -3,6 +3,7 @@ import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion
 import { Check, Trash2, Pencil, X, ChevronDown, Tag, Star, Euro, Heart, MoreVertical, Store, GripVertical, ArrowLeftRight, MapPin } from 'lucide-react'
 import { useLongPressDrag } from '../hooks/useLongPressDrag'
 import CategoryIcon from './ui/CategoryIcon'
+import CEInput from './ui/CEInput'
 import { searchProducts, getPricesForFavorites } from '../data/productsDatabase'
 import { getZonePrices, sortByPrice, sortByDistance, getAverageInZone } from '../data/zonePricing'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
@@ -55,7 +56,6 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate, reorde
   // Confronto prezzi: ambito (preferiti / tutta la zona) e ordinamento (prezzo / distanza)
   const [zoneScope, setZoneScope] = useState('preferiti')
   const [zoneSort, setZoneSort] = useState('prezzo')
-  const inputRef = useRef(null)
   const dropdownRef = useRef(null)
   const unitsRef = useRef(null)
   const menuRef = useRef(null)
@@ -111,14 +111,6 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate, reorde
     const newSupermarketId = smId === supermarketId ? null : smId
     onUpdate(item.id, { supermarketId: newSupermarketId })
   }
-
-  // Focus input quando entra in edit mode
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus()
-      inputRef.current.select()
-    }
-  }, [isEditing])
 
   // Chiudi dropdown quando si clicca fuori
   useEffect(() => {
@@ -203,14 +195,15 @@ export default function ProductItem({ item, onToggle, onDelete, onUpdate, reorde
         className="flex flex-col gap-2 p-3 bg-white rounded-xl shadow-soft border-2 border-sky relative z-40"
       >
         {/* Input nome */}
-        <input
-          ref={inputRef}
-          type="text"
+        <CEInput
+          autoFocus
           value={editName}
-          onChange={(e) => setEditName(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="w-full px-3 py-2 bg-snow border border-cloud rounded-lg text-night focus:outline-none focus:border-sky"
+          onChange={setEditName}
+          onEnter={handleSave}
+          onEscape={handleCancel}
           placeholder="Nome prodotto..."
+          ariaLabel="Nome prodotto"
+          className="w-full px-3 py-2 bg-snow border border-cloud rounded-lg text-night focus:border-sky"
         />
 
         {/* Riga quantità + unità + prezzo */}

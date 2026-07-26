@@ -5,6 +5,7 @@ import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useLoyaltyCards } from '../hooks/useLoyaltyCards'
 import { formatDistance, getOpenStatus, distanceKm } from '../data/supermarkets'
 import { useLocationContext } from '../contexts/LocationContext'
+import CEInput from './ui/CEInput'
 import LoyaltyCardModal from './LoyaltyCardModal'
 import CardDisplayModal from './CardDisplayModal'
 
@@ -33,14 +34,14 @@ export default function SupermarketsPage({ onOpenDetail }) {
           }`}
         >
           <Search className="w-5 h-5 text-slate flex-shrink-0" />
-          <input
-            type="text"
+          <CEInput
             value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
+            onChange={setSearchValue}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
             placeholder="Cerca una posizione..."
-            className="flex-1 min-w-0 bg-transparent text-night placeholder:text-slate-light focus:outline-none"
+            ariaLabel="Cerca una posizione"
+            className="flex-1 min-w-0 text-night"
           />
           {searchValue && (
             <button

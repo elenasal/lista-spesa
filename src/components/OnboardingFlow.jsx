@@ -12,6 +12,7 @@ import { useFavoriteProducts } from '../hooks/useFavoriteProducts'
 import { useLocationContext } from '../contexts/LocationContext'
 import CatalogProductCard from './CatalogProductCard'
 import SelectDropdown from './ui/SelectDropdown'
+import CEInput from './ui/CEInput'
 import AssistantSheet from './AssistantSheet'
 
 const TOTAL_STEPS = 4
@@ -256,12 +257,12 @@ function StepLocation({ zone, setZone, onUseMyLocation, status }) {
 
       <div className="flex items-center gap-2.5 px-3 py-3 bg-white border border-cloud rounded-xl focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-colors">
         <Search className="w-5 h-5 text-slate flex-shrink-0" />
-        <input
-          type="text"
+        <CEInput
           value={zone}
-          onChange={(e) => setZone(e.target.value)}
+          onChange={setZone}
           placeholder="Es. Novara, Italia"
-          className="flex-1 min-w-0 bg-transparent text-night placeholder:text-slate-light focus:outline-none"
+          ariaLabel="Zona"
+          className="flex-1 min-w-0 text-night"
         />
         {zone && (
           <button onClick={() => setZone('')} className="text-slate hover:text-night" aria-label="Cancella">
@@ -326,12 +327,12 @@ function StepProducts({
       {/* Ricerca per nome (barra semplice) */}
       <div className="flex items-center gap-2.5 px-3 py-2.5 bg-white border border-cloud rounded-xl focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-colors">
         <Search className="w-4 h-4 text-slate flex-shrink-0" />
-        <input
-          type="text"
+        <CEInput
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={setQuery}
           placeholder="Cerca un prodotto..."
-          className="flex-1 min-w-0 bg-transparent text-sm text-night placeholder:text-slate-light focus:outline-none"
+          ariaLabel="Cerca un prodotto"
+          className="flex-1 min-w-0 text-sm text-night"
         />
         {query && (
           <button onClick={() => setQuery('')} className="text-slate hover:text-night" aria-label="Cancella">
@@ -419,13 +420,13 @@ function StepFirstList({ listName, setListName, supermarketId, setSupermarketId,
         <label className="text-xs font-semibold text-slate uppercase tracking-wider">Nome della lista</label>
         <div className="flex items-center gap-2.5 px-3 py-3 mt-2 bg-white border border-cloud rounded-xl focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-colors">
           <ListPlus className="w-5 h-5 text-slate flex-shrink-0" />
-          <input
+          <CEInput
             autoFocus
-            type="text"
             value={listName}
-            onChange={(e) => setListName(e.target.value)}
+            onChange={setListName}
             placeholder="Es. Spesa della settimana"
-            className="flex-1 min-w-0 bg-transparent text-night placeholder:text-slate-light focus:outline-none"
+            ariaLabel="Nome della lista"
+            className="flex-1 min-w-0 text-night"
           />
         </div>
       </div>
