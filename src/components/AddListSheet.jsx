@@ -36,20 +36,17 @@ export default function AddListSheet({ onCreateList }) {
 
   return (
     <>
-      {/* Barra fissa in basso (chiusa) */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#c8eeff] shadow-[0_-2px_12px_rgba(14,165,233,0.10)]">
-        <div className="max-w-lg mx-auto px-3 py-3">
-          <button
-            onClick={openSheet}
-            className="w-full flex items-center gap-3 pl-4 pr-2 py-2.5 bg-white rounded-2xl shadow-soft-lg border border-cloud"
-          >
-            <span className="flex-1 text-left text-slate-light">Nuova lista...</span>
-            <span className="w-11 h-11 flex items-center justify-center bg-gradient-to-r from-sky to-ocean text-white rounded-xl shadow-soft">
-              <Plus className="w-5 h-5" />
-            </span>
-          </button>
-        </div>
-      </div>
+      {/* FAB "Nuova lista" — bottom-right, appena sopra la tab bar (~64px).
+          Il campanello notifiche ora vive nell'header (Phase 3), quindi il FAB
+          non è più impilato su di esso: posizione bassa e pulita. */}
+      <button
+        onClick={openSheet}
+        aria-label="Nuova lista"
+        title="Nuova lista"
+        className="fixed bottom-20 right-4 z-40 w-14 h-14 flex items-center justify-center rounded-2xl bg-gradient-to-br from-sky to-ocean text-white shadow-soft-lg hover:brightness-105 active:scale-95 transition-all"
+      >
+        <Plus className="w-7 h-7" />
+      </button>
 
       <BottomSheet isOpen={open} onClose={() => setOpen(false)}>
         <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4">

@@ -1,19 +1,19 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  MapPin, Locate, Search, X, Heart, Store, ShoppingCart,
-  Check, ChevronRight, ListPlus, Sparkle, LayoutGrid, Tag,
+  MapPin, Locate, Heart, Store, ShoppingCart,
+  Check, ChevronRight, ListPlus, Sparkle,
 } from 'lucide-react'
-import { SUPERMARKETS, getSupermarketsByDistance, getSupermarketById, formatDistance } from '../data/supermarkets'
-import { PRODUCTS_DATABASE, getLowestPrice, getBrand, getAllBrands } from '../data/productsDatabase'
-import { CATEGORY_ORDER, getCategoryName } from '../data/categories'
+import { getSupermarketsByDistance, getSupermarketById, formatDistance } from '../data/supermarkets'
+import { getLowestPrice } from '../data/productsDatabase'
 import { useFavoriteSupermarkets } from '../hooks/useFavoriteSupermarkets'
 import { useFavoriteProducts } from '../hooks/useFavoriteProducts'
 import { useLocationContext } from '../contexts/LocationContext'
-import CatalogProductCard from './CatalogProductCard'
 import SelectDropdown from './ui/SelectDropdown'
 import CEInput from './ui/CEInput'
+import LocationSearchInput from './ui/LocationSearchInput'
 import AssistantSheet from './AssistantSheet'
+import ProductSearchPanel from './ProductSearchPanel'
 
 const TOTAL_STEPS = 4
 
@@ -27,46 +27,28 @@ const STEP_META = {
 export default function OnboardingFlow({ onComplete, onCreateList }) {
   const [step, setStep] = useState(1)
 
-  // Step 1 — zona: posizione reale condivisa (LocationContext)
-  const { label: zone, setLabel: setZone, requestLocation, status: locStatus } = useLocationContext()
+  // Step 1 — zona: posizione reale condivisa (LocationContext). Il campo di
+  // ricerca (LocationSearchInput) scrive direttamente sul contesto; qui leggiamo
+  // `zone` per la scrittura legacy in goNext e passiamo GPS/stato al bottone.
+  const { label: zone, requestLocation, status: locStatus } = useLocationContext()
 
   // Step 2 — supermercati preferiti
   const { supermarketsWithFavorites, toggleFavorite: toggleFavSupermarket, favorites: favSupermarketIds } =
     useFavoriteSupermarkets()
 
-  // Step 3 — prodotti preferiti (stessi filtri del catalogo, senza zona:
-  // il supermercato è tra i preferiti scelti al passo 2)
+  // Step 3 — prodotti preferiti: la ricerca (search + cascata categoria/brand)
+  // vive ora nel pannello condiviso `ProductSearchPanel`. Il "dove" NON filtra
+  // qui: è un riepilogo in sola lettura degli step 1-2. Teniamo solo il seed
+  // per l'assistente (aggiornato via onQueryChange).
   const { isFavorite, toggleFavorite: toggleFavProduct, favorites: favProducts } = useFavoriteProducts()
-  const [productQuery, setProductQuery] = useState('')
-  const [productCategory, setProductCategory] = useState(null)
-  const [productBrand, setProductBrand] = useState(null)
-  const [productSupermarketId, setProductSupermarketId] = useState(null)
+  const [productSeed, setProductSeed] = useState('')
   const [showAssistant, setShowAssistant] = useState(false)
 
-  const productCategoryOptions = useMemo(() => {
-    const present = new Set(PRODUCTS_DATABASE.map((p) => p.category))
-    return CATEGORY_ORDER.filter((c) => present.has(c)).map((c) => ({ value: c, label: getCategoryName(c) }))
-  }, [])
-  const productBrandOptions = useMemo(() => getAllBrands().map((b) => ({ value: b, label: b })), [])
-  const productSupermarketOptions = useMemo(
-    () =>
-      favSupermarketIds
-        .map(getSupermarketById)
-        .filter(Boolean)
-        .map((sm) => ({ value: sm.id, label: sm.name, color: sm.color })),
+  // Nomi dei supermercati preferiti (riepilogo sola-lettura dello step 2)
+  const favSupermarketNames = useMemo(
+    () => favSupermarketIds.map((id) => getSupermarketById(id)?.name).filter(Boolean),
     [favSupermarketIds]
   )
-
-  const productResults = useMemo(() => {
-    const q = productQuery.toLowerCase().trim()
-    return PRODUCTS_DATABASE.filter((p) => {
-      if (productCategory && p.category !== productCategory) return false
-      if (productSupermarketId && !p.prices[productSupermarketId]) return false
-      if (productBrand && getBrand(p) !== productBrand) return false
-      if (q && !p.name.toLowerCase().includes(q)) return false
-      return true
-    })
-  }, [productQuery, productCategory, productBrand, productSupermarketId])
 
   // Step 4 — prima lista
   const [listName, setListName] = useState('')
@@ -142,8 +124,6 @@ export default function OnboardingFlow({ onComplete, onCreateList }) {
           >
             {step === 1 && (
               <StepLocation
-                zone={zone}
-                setZone={setZone}
                 onUseMyLocation={requestLocation}
                 status={locStatus}
               />
@@ -157,22 +137,13 @@ export default function OnboardingFlow({ onComplete, onCreateList }) {
             )}
             {step === 3 && (
               <StepProducts
-                query={productQuery}
-                setQuery={setProductQuery}
-                onOpenAssistant={() => setShowAssistant(true)}
-                category={productCategory}
-                setCategory={setProductCategory}
-                brand={productBrand}
-                setBrand={setProductBrand}
-                supermarketId={productSupermarketId}
-                setSupermarketId={setProductSupermarketId}
-                categoryOptions={productCategoryOptions}
-                brandOptions={productBrandOptions}
-                supermarketOptions={productSupermarketOptions}
-                results={productResults}
-                isFavorite={isFavorite}
-                onToggle={toggleFavProduct}
+                zoneLabel={zone}
+                supermarketNames={favSupermarketNames}
                 selectedCount={favProducts.length}
+                isFavorite={isFavorite}
+                onToggleFavorite={toggleFavProduct}
+                onOpenAssistant={() => setShowAssistant(true)}
+                onQueryChange={setProductSeed}
               />
             )}
             {step === 4 && (
@@ -221,16 +192,18 @@ export default function OnboardingFlow({ onComplete, onCreateList }) {
       <AssistantSheet
         isOpen={showAssistant}
         onClose={() => setShowAssistant(false)}
-        seedQuery={productQuery}
+        seedQuery={productSeed}
         isFavorite={isFavorite}
         onToggleFavorite={toggleFavProduct}
+        contextSupermarketIds={favSupermarketIds}
+        contextZoneLabel={zone}
       />
     </div>
   )
 }
 
 // ---- Step 1: posizione ----
-function StepLocation({ zone, setZone, onUseMyLocation, status }) {
+function StepLocation({ onUseMyLocation, status }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col items-center text-center py-4">
@@ -255,21 +228,8 @@ function StepLocation({ zone, setZone, onUseMyLocation, status }) {
         <div className="flex-1 h-px bg-cloud" />
       </div>
 
-      <div className="flex items-center gap-2.5 px-3 py-3 bg-white border border-cloud rounded-xl focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-colors">
-        <Search className="w-5 h-5 text-slate flex-shrink-0" />
-        <CEInput
-          value={zone}
-          onChange={setZone}
-          placeholder="Es. Novara, Italia"
-          ariaLabel="Zona"
-          className="flex-1 min-w-0 text-night"
-        />
-        {zone && (
-          <button onClick={() => setZone('')} className="text-slate hover:text-night" aria-label="Cancella">
-            <X className="w-4 h-4" />
-          </button>
-        )}
-      </div>
+      {/* Ricerca località con autocomplete; GPS gestito dal grande bottone sopra */}
+      <LocationSearchInput placeholder="Es. Novara" showGpsButton={false} />
 
       <p className="text-xs text-slate-light text-center px-4">
         Puoi saltare questo passo: potrai impostare la zona in seguito.
@@ -311,98 +271,84 @@ function StepSupermarkets({ supermarkets, onToggle, selectedCount }) {
   )
 }
 
-// ---- Step 3: prodotti (stessi filtri del catalogo, senza zona) ----
+// ---- Step 3: prodotti (pannello condiviso + riepilogo sola-lettura step 1-2) ----
 function StepProducts({
-  query, setQuery, category, setCategory, brand, setBrand, supermarketId, setSupermarketId,
-  categoryOptions, brandOptions, supermarketOptions, results, isFavorite, onToggle, selectedCount, onOpenAssistant,
+  zoneLabel, supermarketNames, selectedCount, isFavorite, onToggleFavorite, onOpenAssistant, onQueryChange,
 }) {
+  // Riepilogo sola-lettura degli step 1-2, con fallback per step saltati.
+  const zoneText = zoneLabel && zoneLabel.trim() ? zoneLabel.trim() : 'Nessuna zona impostata'
+  const shownMarkets = supermarketNames.slice(0, 3)
+  const extraCount = supermarketNames.length - shownMarkets.length
+  const marketsText =
+    supermarketNames.length > 0
+      ? shownMarkets.join(', ') + (extraCount > 0 ? ` +${extraCount}` : '')
+      : 'Nessun supermercato selezionato'
+
+  const handleToggleFavorite = (product) =>
+    onToggleFavorite({
+      name: product.name,
+      category: product.category,
+      price: getLowestPrice(product)?.price ?? null,
+    })
+
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 text-sm">
-        <Heart className="w-4 h-4 text-rose-500 fill-current" />
-        <span className="font-semibold text-night">{selectedCount}</span>
-        <span className="text-slate">di 3</span>
-      </div>
+    <ProductSearchPanel
+      supermarketId={null}
+      isFavorite={isFavorite}
+      onToggleFavorite={handleToggleFavorite}
+      onQueryChange={onQueryChange}
+      contextSlot={
+        <div className="space-y-4">
+          {/* Riepilogo SOLA LETTURA e NUMERATO degli step 1-2 (zona + supermercati
+             preferiti). Non modificabile e NON filtra i risultati (supermarketId=null). */}
+          <div className="space-y-2 rounded-xl border border-cloud bg-sky-light/20 px-3 py-2.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <MapPin className="w-4 h-4 text-ocean flex-shrink-0" />
+              <span className="text-sm text-night truncate">
+                <span className="font-semibold">1.</span> Zona: {zoneText}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <Store className="w-4 h-4 text-ocean flex-shrink-0" />
+              <span className="text-sm text-night truncate">
+                <span className="font-semibold">2.</span> Supermercati: {marketsText}
+              </span>
+            </div>
+          </div>
 
-      {/* Ricerca per nome (barra semplice) */}
-      <div className="flex items-center gap-2.5 px-3 py-2.5 bg-white border border-cloud rounded-xl focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-colors">
-        <Search className="w-4 h-4 text-slate flex-shrink-0" />
-        <CEInput
-          value={query}
-          onChange={setQuery}
-          placeholder="Cerca un prodotto..."
-          ariaLabel="Cerca un prodotto"
-          className="flex-1 min-w-0 text-sm text-night"
-        />
-        {query && (
-          <button onClick={() => setQuery('')} className="text-slate hover:text-night" aria-label="Cancella">
-            <X className="w-4 h-4" />
+          {/* CTA-eroe: l'assistente come azione principale suggerita (come nel catalogo). */}
+          <button
+            onClick={onOpenAssistant}
+            className="w-full flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-violet-500 to-ocean text-white text-left shadow-soft-lg active:scale-[0.99] transition-transform"
+          >
+            <span className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+              <Sparkle className="w-6 h-6 fill-current" />
+            </span>
+            <span className="min-w-0">
+              <span className="block font-bold">Fatti guidare dall'assistente</span>
+              <span className="block text-sm text-white/80">Poche domande e ti suggerisce i prodotti giusti</span>
+            </span>
           </button>
-        )}
-      </div>
 
-      {/* Assistente guidato (uniforme al catalogo) */}
-      <button
-        onClick={onOpenAssistant}
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-ocean text-white font-semibold shadow-soft active:scale-[0.99] transition-transform"
-      >
-        <Sparkle className="w-4 h-4 fill-current" />
-        Fatti guidare dall'assistente
-      </button>
-
-      {/* Filtri cumulativi: categoria + brand, poi supermercato (tra i preferiti) */}
-      <div className="grid grid-cols-2 gap-2">
-        <SelectDropdown
-          value={category}
-          onChange={setCategory}
-          options={categoryOptions}
-          allLabel="Tutte le categorie"
-          placeholder="Categoria"
-          icon={<LayoutGrid className="w-4 h-4" />}
-        />
-        <SelectDropdown
-          value={brand}
-          onChange={setBrand}
-          options={brandOptions}
-          allLabel="Tutti i brand"
-          placeholder="Brand"
-          icon={<Tag className="w-4 h-4" />}
-        />
-      </div>
-      {supermarketOptions.length > 0 && (
-        <SelectDropdown
-          value={supermarketId}
-          onChange={setSupermarketId}
-          options={supermarketOptions}
-          allLabel="Tutti i miei supermercati"
-          placeholder="Supermercato"
-          icon={<Store className="w-4 h-4" />}
-        />
-      )}
-
-      <div className="grid grid-cols-2 gap-3 pt-1">
-        {results.map((product) => (
-          <CatalogProductCard
-            key={product.id}
-            product={product}
-            supermarketId={supermarketId}
-            isFavorite={isFavorite(product.name)}
-            onToggleFavorite={() =>
-              onToggle({
-                name: product.name,
-                category: product.category,
-                price: getLowestPrice(product)?.price ?? null,
-              })
-            }
-          />
-        ))}
-        {results.length === 0 && (
-          <p className="col-span-2 text-sm text-slate text-center py-8">
-            Nessun prodotto con questi filtri.
-          </p>
-        )}
-      </div>
-    </div>
+          {/* Divider tra il CTA-eroe e la barra di ricerca (dentro il pannello). */}
+          <div className="flex items-center gap-3 text-xs text-slate-light">
+            <div className="flex-1 h-px bg-cloud" />
+            oppure cerca manualmente
+            <div className="flex-1 h-px bg-cloud" />
+          </div>
+        </div>
+      }
+      beforeResultsSlot={
+        <div className="mt-4">
+          {/* Contatore "X di 3" */}
+          <div className="flex items-center gap-2 text-sm">
+            <Heart className="w-4 h-4 text-rose-500 fill-current" />
+            <span className="font-semibold text-night">{selectedCount}</span>
+            <span className="text-slate">di 3</span>
+          </div>
+        </div>
+      }
+    />
   )
 }
 
@@ -413,21 +359,6 @@ function StepFirstList({ listName, setListName, supermarketId, setSupermarketId,
       <div className="flex flex-col items-center text-center py-2">
         <div className="w-20 h-20 rounded-3xl bg-sky-light flex items-center justify-center">
           <ShoppingCart className="w-10 h-10 text-ocean" />
-        </div>
-      </div>
-
-      <div>
-        <label className="text-xs font-semibold text-slate uppercase tracking-wider">Nome della lista</label>
-        <div className="flex items-center gap-2.5 px-3 py-3 mt-2 bg-white border border-cloud rounded-xl focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-colors">
-          <ListPlus className="w-5 h-5 text-slate flex-shrink-0" />
-          <CEInput
-            autoFocus
-            value={listName}
-            onChange={setListName}
-            placeholder="Es. Spesa della settimana"
-            ariaLabel="Nome della lista"
-            className="flex-1 min-w-0 text-night"
-          />
         </div>
       </div>
 
@@ -457,6 +388,21 @@ function StepFirstList({ listName, setListName, supermarketId, setSupermarketId,
             Per legare la lista a un supermercato, aggiungine uno ai preferiti nel passo precedente.
           </p>
         )}
+      </div>
+
+      <div>
+        <label className="text-xs font-semibold text-slate uppercase tracking-wider">Nome della lista</label>
+        <div className="flex items-center gap-2.5 px-3 py-3 mt-2 bg-white border border-cloud rounded-xl focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-colors">
+          <ListPlus className="w-5 h-5 text-slate flex-shrink-0" />
+          <CEInput
+            autoFocus
+            value={listName}
+            onChange={setListName}
+            placeholder="Es. Spesa della settimana"
+            ariaLabel="Nome della lista"
+            className="flex-1 min-w-0 text-night"
+          />
+        </div>
       </div>
     </div>
   )

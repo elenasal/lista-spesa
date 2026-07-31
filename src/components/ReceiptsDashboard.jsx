@@ -32,7 +32,7 @@ export default function ReceiptsDashboard() {
   }, [summaryBySupermarket, favoriteIds])
 
   return (
-    <div className="pt-10 pb-28">
+    <div className="pt-20 pb-24">
       {/* Totali complessivi */}
       <div className="grid grid-cols-3 gap-2">
         <StatTile label="Speso" value={euro(totals.spent)} icon={<Wallet className="w-4 h-4" />} tone="ocean" />
@@ -118,18 +118,15 @@ export default function ReceiptsDashboard() {
         </div>
       )}
 
-      {/* Footer: aggiungi scontrino */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#c8eeff] shadow-[0_-2px_12px_rgba(14,165,233,0.10)]">
-        <div className="max-w-lg mx-auto px-3 py-3">
-          <button
-            onClick={() => setShowAdd(true)}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-sky to-ocean text-white font-semibold shadow-soft-lg active:scale-[0.99] transition-transform"
-          >
-            <Camera className="w-5 h-5" />
-            Aggiungi scontrino
-          </button>
-        </div>
-      </div>
+      {/* FAB "+" — apre la sheet "Aggiungi scontrino". Stile identico al FAB di AddListSheet. */}
+      <button
+        onClick={() => setShowAdd(true)}
+        aria-label="Aggiungi scontrino"
+        title="Aggiungi scontrino"
+        className="fixed bottom-20 right-4 z-40 w-14 h-14 flex items-center justify-center rounded-2xl bg-gradient-to-br from-sky to-ocean text-white shadow-soft-lg hover:brightness-105 active:scale-95 transition-all"
+      >
+        <Plus className="w-7 h-7" />
+      </button>
 
       <AddReceiptSheet
         isOpen={showAdd}

@@ -783,6 +783,18 @@ export function getAllBrands() {
   return [...set].sort((a, b) => a.localeCompare(b, 'it'))
 }
 
+// Helper: brand distinti presenti in un dato insieme di prodotti (cascata),
+// ordinati alfabeticamente (locale 'it'), esclusi i null. Funzione pura.
+export function getBrandsForProducts(products) {
+  if (!Array.isArray(products)) return []
+  const set = new Set()
+  for (const p of products) {
+    const b = getBrand(p)
+    if (b) set.add(b)
+  }
+  return [...set].sort((a, b) => a.localeCompare(b, 'it'))
+}
+
 // Helper: prezzo più basso di un prodotto tra TUTTI i supermercati (o uno specifico).
 // Ritorna { supermarketId, price (effettivo), onSale, listPrice } oppure null.
 export function getLowestPrice(product, supermarketId = null) {

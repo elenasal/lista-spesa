@@ -1,0 +1,64 @@
+# docs/.index.yaml — routing index for doc-search (maintained by dok)
+version: "2.0"
+_meta:
+  last_updated: 2026-07-31
+  structure: single-core-doc
+  note: >
+    CLAUDE.md (project root) is the core doc for this project, auto-loaded each session.
+    docs/IMPLEMENTATION_PLAN.md is ephemeral (overwritten by /archz), not routed.
+
+# LAYER 1: Direct answers without file reads
+quick_answers:
+  - q: "Come funziona la navigazione? Si usa react-router?"
+    a: "No react-router. Macchina a stati `currentView` (enum VIEWS) in src/App.jsx; una bottom tab bar a 4 tab di navigazione (+ 5ª icona campanello per le notifiche) pilota lo stato. Ogni tab: default = contenuti personali + FAB '+' per aggiungere/scoprire. Tab bar solo su viste top-level, nascosta nel drill-down LIST (il dettaglio supermercato è una modale, non una vista)."
+    keywords: [navigazione, navigation, router, react-router, tab, tabbar, bottom, currentView, views, routing, notifiche, campanello, fab, preferiti]
+    min_match: 1
+  - q: "C'è un backend? Supabase è attivo?"
+    a: "No. In questa fase è solo mockup front-end; backend/Supabase RINVIATO alla Fase 2. lib/supabase.js e AuthContext esistono ma sono scollegati (AuthProvider non montato). Dati mock (area Novara); solo le distanze supermercati usano coordinate reali. Persistenza 100% localStorage."
+    keywords: [backend, supabase, auth, database, fase 2, phase 2, mock, mockup, login, sync]
+    min_match: 1
+  - q: "Dove sono salvati i dati / quali chiavi localStorage?"
+    a: "Tutto in localStorage, chiavi namespaced `lista-spesa-*` (es. lista-spesa-lists, lista-spesa-items-{listId}, lista-spesa-receipts). Vedi sezione Persistenza in CLAUDE.md."
+    keywords: [localstorage, persistenza, persistence, storage, chiavi, keys, dati, data]
+    min_match: 1
+  - q: "Quali sono i colori del design system?"
+    a: "Palette 'Fresh Blue': snow #F8FAFC, cloud #F1F5F9, sky #38BDF8, ocean #0EA5E9, deep #0284C7, slate #64748B, night #1E293B. Definita in tailwind.config.js."
+    keywords: [colori, colors, palette, design, fresh blue, tailwind, tema, theme]
+    min_match: 1
+
+# LAYER 2: Intent-based routing
+intent_routing:
+  "aggiungere una vista o una tab":
+    primary: CLAUDE.md
+  "capire l'architettura di navigazione":
+    primary: CLAUDE.md
+  "attivare il backend supabase fase 2":
+    primary: CLAUDE.md
+
+# LAYER 5: Standard topics (fallback)
+topics:
+  navigazione:
+    description: Modello di navigazione (state machine currentView, bottom tab bar, header unificato) e mappa moduli src/.
+    files: [CLAUDE.md]
+    sections: ["## Struttura & Navigazione"]
+    keywords: [navigazione, navigation, tab bar, header, viste, views, app.jsx, struttura, moduli]
+  decisioni:
+    description: Decisioni di architettura e loro rationale (backend rinviato, no react-router, 4 tab + FAB, header unico).
+    files: [CLAUDE.md]
+    sections: ["## Decisioni di architettura"]
+    keywords: [decisioni, decisions, architettura, architecture, rationale, perche, why, fase 2]
+  design-system:
+    description: Palette colori Fresh Blue e categorie prodotti.
+    files: [CLAUDE.md]
+    sections: ["## Design System"]
+    keywords: [design, colori, colors, palette, categorie, categories, icone, icons]
+  persistenza:
+    description: Chiavi localStorage e forma degli item.
+    files: [CLAUDE.md]
+    sections: ["## Persistenza"]
+    keywords: [persistenza, persistence, localstorage, storage, chiavi, keys]
+  roadmap:
+    description: Roadmap per fasi, stato feature e riepilogo "da fare" (Fase 2/Supabase esclusa).
+    files: [CLAUDE.md]
+    sections: ["## Roadmap"]
+    keywords: [roadmap, feature, features, fasi, phases, todo, da fare, stato]

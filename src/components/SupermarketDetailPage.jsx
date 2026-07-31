@@ -41,7 +41,7 @@ export default function SupermarketDetailPage({ supermarket }) {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="pt-8 pb-6 space-y-5"
+      className="pt-4 pb-6 space-y-5"
     >
       {/* Intestazione negozio */}
       <div className="flex items-center gap-3">

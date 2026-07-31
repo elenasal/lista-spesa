@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
 import { Sparkles, X, RotateCcw, Search, Send } from 'lucide-react'
-import { PRODUCTS_DATABASE, getLowestPrice, getBrand, suggestBrandsForTerm } from '../data/productsDatabase'
+import { PRODUCTS_DATABASE, getLowestPrice, getBrand, suggestBrandsForTerm, getBestPrice } from '../data/productsDatabase'
 import { CATEGORY_ORDER, getCategoryName, suggestCategoriesByKeyword } from '../data/categories'
-import { getSupermarketsByDistance } from '../data/supermarkets'
+import { getSupermarketsByDistance, getSupermarketById } from '../data/supermarkets'
 import CatalogProductCard from './CatalogProductCard'
 import BottomSheet from './ui/BottomSheet'
 import CEInput from './ui/CEInput'
@@ -29,8 +29,25 @@ export default function AssistantSheet({
   onAddToList = null,
   isFavorite,
   onToggleFavorite,
+  contextSupermarketIds = null,
+  contextZoneLabel = '',
 }) {
   const seed = seedQuery.trim()
+
+  // Contesto opzionale (Strada 1): quando l'assistente riceve i supermercati
+  // preferiti dall'onboarding, "sa già" dove cercare → salta la domanda
+  // supermercato, dichiara il contesto e restringe i suggerimenti ai preferiti.
+  const hasContext = (contextSupermarketIds?.length ?? 0) > 0
+  const zoneLabel = (contextZoneLabel || '').trim()
+
+  // Nomi dei supermercati di contesto (fino a 3, poi "+N")
+  const contextNamesText = useMemo(() => {
+    if (!hasContext) return ''
+    const names = contextSupermarketIds.map((id) => getSupermarketById(id)?.name).filter(Boolean)
+    const shown = names.slice(0, 3)
+    const extra = names.length - shown.length
+    return shown.join(', ') + (extra > 0 ? ` +${extra}` : '')
+  }, [hasContext, contextSupermarketIds])
   const [answers, setAnswers] = useState({})
   const [stepIndex, setStepIndex] = useState(0)
   const [optionQuery, setOptionQuery] = useState('') // input libero / filtro liste lunghe
@@ -92,10 +109,11 @@ export default function AssistantSheet({
     s.push({ key: 'category', kind: 'category' })
     s.push({ key: 'brand', kind: 'chips', q: 'Hai preferenza di marchio?', options: brandOptions })
     s.push({ key: 'price', kind: 'chips', q: 'Che priorità dai al prezzo?', options: PRICE_OPTIONS })
-    s.push({ key: 'supermarket', kind: 'chips', q: 'Preferisci un supermercato?', options: supermarketOptions })
+    // Con contesto (supermercati già scelti nell'onboarding) la domanda supermercato è superflua.
+    if (!hasContext) s.push({ key: 'supermarket', kind: 'chips', q: 'Preferisci un supermercato?', options: supermarketOptions })
     s.push({ key: 'sale', kind: 'chips', q: 'Solo prodotti in offerta?', options: SALE_OPTIONS })
     return s
-  }, [seed, brandOptions, supermarketOptions])
+  }, [seed, brandOptions, supermarketOptions, hasContext])
 
   const done = stepIndex >= steps.length
 
@@ -105,9 +123,15 @@ export default function AssistantSheet({
   const suggestions = useMemo(() => {
     if (!done) return []
 
+    // Con contesto e senza una scelta esplicita di supermercato, ordina/valuta il
+    // prezzo tra i soli preferiti; altrimenti comportamento storico.
+    const useFavorites = hasContext && !answers.supermarket
+    const bestOf = (p) =>
+      useFavorites ? getBestPrice(p, contextSupermarketIds) : getLowestPrice(p, answers.supermarket || null)
+
     const topN = (arr) =>
       arr
-        .map((p) => ({ p, best: getLowestPrice(p, answers.supermarket || null) }))
+        .map((p) => ({ p, best: bestOf(p) }))
         .sort((a, b) => (a.best?.price ?? Infinity) - (b.best?.price ?? Infinity))
         .slice(0, 4)
         .map((x) => x.p)
@@ -123,8 +147,11 @@ export default function AssistantSheet({
     const buildSynth = (brands) => {
       const capTerm = term ? term.charAt(0).toUpperCase() + term.slice(1) : 'Prodotto'
       const cat = answers.category || deducedCategories[0]?.value || 'dispensa'
-      const smList = getSupermarketsByDistance()
-      const smIds = answers.supermarket ? [answers.supermarket] : smList.slice(0, 3).map((s) => s.id)
+      const smIds = answers.supermarket
+        ? [answers.supermarket]
+        : useFavorites
+          ? contextSupermarketIds
+          : getSupermarketsByDistance().slice(0, 3).map((s) => s.id)
       return brands.map((brand, i) => {
         const base = 1.19 + i * 0.2
         const prices = {}
@@ -147,6 +174,8 @@ export default function AssistantSheet({
     let base = PRODUCTS_DATABASE
     if (answers.category) base = base.filter((p) => p.category === answers.category)
     if (answers.supermarket) base = base.filter((p) => p.prices[answers.supermarket])
+    // Con contesto: solo prodotti disponibili in almeno uno dei supermercati preferiti.
+    if (useFavorites) base = base.filter((p) => contextSupermarketIds.some((id) => p.prices[id]))
     if (answers.sale) base = base.filter((p) => Object.values(p.prices).some((pr) => pr.onSale))
 
     // Marchio scelto: se c'è un prodotto reale di quel marchio coerente → usalo,
@@ -168,7 +197,7 @@ export default function AssistantSheet({
     }
 
     return topN(base)
-  }, [done, term, answers, deducedCategories])
+  }, [done, term, answers, deducedCategories, hasContext, contextSupermarketIds])
 
   const advance = () => {
     setStepIndex((i) => i + 1)
@@ -257,9 +286,18 @@ export default function AssistantSheet({
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
               {/* Bolla iniziale */}
               <Bubble from="bot">
-                {seed
-                  ? <>Cerchi «<span className="font-semibold">{seed}</span>». Ti faccio un paio di domande per scegliere il migliore.</>
-                  : 'Ciao! Dimmi cosa cerchi e ti aiuto a scegliere.'}
+                {hasContext ? (
+                  <>
+                    {seed && <>Cerchi «<span className="font-semibold">{seed}</span>». </>}
+                    Cerco nei tuoi supermercati (<span className="font-semibold">{contextNamesText}</span>)
+                    {zoneLabel && <>, nella zona di <span className="font-semibold">{zoneLabel}</span></>}
+                    . Ti faccio un paio di domande per scegliere il migliore.
+                  </>
+                ) : seed ? (
+                  <>Cerchi «<span className="font-semibold">{seed}</span>». Ti faccio un paio di domande per scegliere il migliore.</>
+                ) : (
+                  'Ciao! Dimmi cosa cerchi e ti aiuto a scegliere.'
+                )}
               </Bubble>
 
               {/* Transcript delle domande già risposte */}

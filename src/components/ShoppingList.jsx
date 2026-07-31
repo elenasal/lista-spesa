@@ -93,7 +93,7 @@ function filterShoppingItems(items, filters, context) {
   })
 }
 
-export default function ShoppingList({ listId, listName = 'Lista della Spesa', listBudget, listSupermarketId = null, listMembers = [], onUpdateBudget }) {
+export default function ShoppingList({ listId, listName = 'Lista della Spesa', listBudget, listSupermarketId = null, listMembers = [], onUpdateBudget, onGoToProducts }) {
   const {
     items,
     loading,
@@ -193,13 +193,14 @@ export default function ShoppingList({ listId, listName = 'Lista della Spesa', l
   const sortedCategories = CATEGORY_ORDER.filter(cat => uncheckedByCategory[cat]?.length > 0)
 
   return (
-    <div className="pt-10 pb-24">
+    <div className="pt-20 pb-24">
       {/* Barra + pannello di aggiunta prodotto (ancorati in basso) */}
       <AddProductSheet
         onAdd={addItem}
         onUpdate={updateItem}
         getSuggestions={getSuggestedProducts}
         listSupermarketId={listSupermarketId}
+        onGoToProducts={onGoToProducts}
       />
 
       {/* Riga prodotti preferiti (quick-add) in cima */}

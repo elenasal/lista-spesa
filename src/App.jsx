@@ -2,24 +2,23 @@ import { useState } from 'react'
 import ShoppingList from './components/ShoppingList'
 import ListsOverview from './components/ListsOverview'
 import SupermarketsPage from './components/SupermarketsPage'
-import SupermarketDetailPage from './components/SupermarketDetailPage'
 import CatalogPage from './components/CatalogPage'
 import ReceiptsDashboard from './components/ReceiptsDashboard'
 import OnboardingFlow from './components/OnboardingFlow'
 import AddListSheet from './components/AddListSheet'
 import Header from './components/layout/Header'
+import BottomTabBar from './components/layout/BottomTabBar'
 import NotificationsModal from './components/NotificationsModal'
 import { useMultipleLists } from './hooks/useMultipleLists'
 import { useNotifications } from './hooks/useNotifications'
 import { useOnboarding } from './hooks/useOnboarding'
-import { Bell, HelpCircle } from 'lucide-react'
+import { HelpCircle } from 'lucide-react'
 
 // Viste disponibili
 const VIEWS = {
   HOME: 'home',
   LIST: 'list',
   SUPERMARKETS: 'supermarkets',
-  SUPERMARKET_DETAIL: 'supermarket-detail',
   CATALOG: 'catalog',
   DASHBOARD: 'dashboard',
 }
@@ -41,8 +40,9 @@ function App() {
   // Vista corrente e ID lista selezionata
   const [currentView, setCurrentView] = useState(VIEWS.HOME)
   const [selectedListId, setSelectedListId] = useState(null)
-  // Supermercato selezionato per la pagina di dettaglio
-  const [selectedSupermarket, setSelectedSupermarket] = useState(null)
+  // Se true, aprendo il tab Prodotti la sheet "Aggiungi prodotti" parte già aperta
+  // (arrivo dal bottone "Aggiungi altri preferiti" nella lista). Consumato al mount.
+  const [catalogAutoDiscover, setCatalogAutoDiscover] = useState(false)
 
   // Notifiche (mockup): feed unico offerte + attività liste condivise
   const { items: notifications, unreadCount, markRead, markAllRead } = useNotifications()
@@ -59,19 +59,9 @@ function App() {
   }
 
   const handleBack = () => {
-    // Dal dettaglio supermercato si torna alla lista supermercati
-    if (currentView === VIEWS.SUPERMARKET_DETAIL) {
-      setSelectedSupermarket(null)
-      setCurrentView(VIEWS.SUPERMARKETS)
-      return
-    }
+    // Unico drill-down con back: LIST → HOME.
     setSelectedListId(null)
     setCurrentView(VIEWS.HOME)
-  }
-
-  const handleOpenSupermarketDetail = (supermarket) => {
-    setSelectedSupermarket(supermarket)
-    setCurrentView(VIEWS.SUPERMARKET_DETAIL)
   }
 
   const handleCreateList = (name, supermarketId = null, budget = null) => {
@@ -79,18 +69,6 @@ function App() {
     // Apri subito la nuova lista
     setSelectedListId(newList.id)
     setCurrentView(VIEWS.LIST)
-  }
-
-  const handleOpenSupermarkets = () => {
-    setCurrentView(VIEWS.SUPERMARKETS)
-  }
-
-  const handleOpenCatalog = () => {
-    setCurrentView(VIEWS.CATALOG)
-  }
-
-  const handleOpenDashboard = () => {
-    setCurrentView(VIEWS.DASHBOARD)
   }
 
   if (loading) {
@@ -135,31 +113,25 @@ function App() {
       case VIEWS.SUPERMARKETS:
         return {
           title: 'Supermercati',
-          subtitle: 'Confronta i prezzi',
-          showBack: true,
+          subtitle: 'Trova e salva i tuoi supermercati',
+          showBack: false,
         }
       case VIEWS.CATALOG:
         return {
           title: 'Sfoglia prodotti',
           subtitle: 'Scopri e aggiungi ai preferiti',
-          showBack: true,
+          showBack: false,
         }
       case VIEWS.DASHBOARD:
         return {
-          title: 'Le mie spese',
-          subtitle: 'Scontrini e risparmi per supermercato',
-          showBack: true,
-        }
-      case VIEWS.SUPERMARKET_DETAIL:
-        return {
-          title: selectedSupermarket?.name || 'Supermercato',
-          subtitle: selectedSupermarket?.address || null,
-          showBack: true,
+          title: 'I miei acquisti',
+          subtitle: "Aggiungi scontrini e tieni d'occhio i risparmi",
+          showBack: false,
         }
       default:
         return {
-          title: 'Dai sfogo alle tue liste',
-          subtitle: 'Tutte le tue liste, nei supermercati che ami.',
+          title: 'La mia spesa',
+          subtitle: 'Crea e organizza le tue liste',
           showBack: false,
         }
     }
@@ -169,24 +141,29 @@ function App() {
 
   const isHome = currentView === VIEWS.HOME
 
+  // Viste top-level: mostrano la bottom tab bar. LIST è il drill-down
+  // (back, senza tab bar).
+  const TOP_LEVEL_VIEWS = [VIEWS.HOME, VIEWS.SUPERMARKETS, VIEWS.CATALOG, VIEWS.DASHBOARD]
+  const showTabBar = TOP_LEVEL_VIEWS.includes(currentView)
+
   return (
     <div className={`min-h-screen ${isHome ? 'bg-[#c8eeff]' : 'bg-white'}`} style={{ overflowX: 'clip' }}>
       <Header
         title={headerInfo.title}
         subtitle={headerInfo.subtitle}
+        isHome={isHome}
         onBack={headerInfo.showBack ? handleBack : null}
         rightAction={isHome ? (
           <button
             onClick={() => setReplayOnboarding(true)}
             aria-label="Rivedi gli step introduttivi"
             title="Rivedi gli step introduttivi"
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white border border-white/25 transition-all"
           >
-            <HelpCircle className="w-5 h-5" />
+            <HelpCircle className="w-6 h-6" />
           </button>
         ) : null}
       />
-      <main className="relative max-w-lg mx-auto px-3 pb-24">
+      <main className={`relative max-w-lg mx-auto px-3 ${showTabBar ? 'pb-28' : 'pb-8'}`}>
         {/* Fascia azzurrina in alto per continuità con l'header (solo pagine interne) */}
         {!isHome && (
           <div
@@ -202,54 +179,45 @@ function App() {
             listSupermarketId={selectedList?.supermarketId}
             listMembers={selectedList?.members}
             onUpdateBudget={(budget) => updateListBudget(selectedListId, budget)}
+            onGoToProducts={() => { setCatalogAutoDiscover(true); setCurrentView(VIEWS.CATALOG) }}
           />
         )}
         {currentView === VIEWS.SUPERMARKETS && (
-          <SupermarketsPage onOpenDetail={handleOpenSupermarketDetail} />
+          <SupermarketsPage onCreateList={handleCreateList} />
         )}
-        {currentView === VIEWS.SUPERMARKET_DETAIL && (
-          <SupermarketDetailPage supermarket={selectedSupermarket} />
+        {currentView === VIEWS.CATALOG && (
+          <CatalogPage
+            openDiscover={catalogAutoDiscover}
+            onDiscoverConsumed={() => setCatalogAutoDiscover(false)}
+          />
         )}
-        {currentView === VIEWS.CATALOG && <CatalogPage />}
         {currentView === VIEWS.DASHBOARD && <ReceiptsDashboard />}
         {currentView === VIEWS.HOME && (
           <ListsOverview
             lists={lists}
             onSelectList={handleSelectList}
-            onCreateList={handleCreateList}
             onDeleteList={deleteList}
             onEditList={(id, { name, budget }) => {
               renameList(id, name)
               updateListBudget(id, budget)
             }}
             onReorderLists={reorderLists}
-            onNavigateToSupermarkets={handleOpenSupermarkets}
-            onNavigateToCatalog={handleOpenCatalog}
-            onNavigateToDashboard={handleOpenDashboard}
           />
         )}
       </main>
 
-      {/* Footer creazione lista (barra fissa + bottom sheet) — solo in home */}
-      {isHome && <AddListSheet onCreateList={handleCreateList} />}
-
-      {/* Campanello notifiche offerte — FAB fisso in basso a destra (mockup) */}
-      {!showNotifications && (
-        <button
-          onClick={() => setShowNotifications(true)}
-          aria-label="Notifiche offerte"
-          className={`fixed right-4 z-40 w-14 h-14 rounded-2xl bg-ocean text-white shadow-soft-lg flex items-center justify-center hover:bg-deep active:scale-95 transition-all ${
-            currentView === VIEWS.LIST || isHome || currentView === VIEWS.CATALOG || currentView === VIEWS.DASHBOARD ? 'bottom-24' : 'bottom-6'
-          }`}
-        >
-          <Bell className="w-6 h-6" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 min-w-[20px] h-5 px-1 flex items-center justify-center text-[11px] font-bold text-white bg-rose-500 rounded-full border-2 border-white">
-              {unreadCount}
-            </span>
-          )}
-        </button>
+      {/* Bottom tab bar — solo sulle viste top-level (nascosta in drill-down) */}
+      {showTabBar && (
+        <BottomTabBar
+          currentView={currentView}
+          onSelect={setCurrentView}
+          unreadCount={unreadCount}
+          onOpenNotifications={() => setShowNotifications(true)}
+        />
       )}
+
+      {/* FAB "Nuova lista" (bottom sheet) — solo in home, sopra la tab bar */}
+      {isHome && <AddListSheet onCreateList={handleCreateList} />}
 
       <NotificationsModal
         isOpen={showNotifications}

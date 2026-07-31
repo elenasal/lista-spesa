@@ -68,6 +68,18 @@ export function suggestCategoriesByKeyword(term) {
   return out
 }
 
+// Ritorna l'id categoria condiviso da TUTTI i prodotti dell'array (cascata),
+// oppure null se l'array è vuoto o le categorie sono miste. Funzione pura.
+export function getUniqueCategory(products) {
+  if (!Array.isArray(products) || products.length === 0) return null
+  const first = products[0]?.category ?? null
+  if (first == null) return null
+  for (const p of products) {
+    if (p?.category !== first) return null
+  }
+  return first
+}
+
 export function getCategoryName(category) {
   return CATEGORY_NAMES[category] || 'Altro'
 }
